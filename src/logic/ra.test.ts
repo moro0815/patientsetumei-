@@ -1,0 +1,215 @@
+import { describe, expect, it } from 'vitest'
+import {
+  assessRa,
+  booleanRemission,
+  cdai,
+  cdaiLevel,
+  classification2010,
+  das28crp,
+  das28crpLevel,
+  das28esr,
+  das28esrLevel,
+  sdai,
+  sdaiLevel,
+} from './ra'
+import { createSession } from '@/state/session'
+import type { RaInput } from '@/types'
+
+function input(over: Partial<RaInput> = {}): RaInput {
+  return { ...createSession('ra').ra, ...over }
+}
+
+/** 標準的な症例：圧痛6・腫脹4・患者VAS 5cm・医師VAS 4cm・CRP 1.0mg/dL・ESR 30mm/h */
+const CASE = input({
+  tenderJoints28: 6,
+  swollenJoints28: 4,
+  patientGlobalVas: 5,
+  physicianGlobalVas: 4,
+  crp: 1.0,
+  esr: 30,
+})
+
+describe('DAS28-ESR', () => {
+  it('原式どおりに計算する', () => {
+    // 0.56√6 + 0.28√4 + 0.70 ln30 + 0.014×50 = 1.3717 + 0.56 + 2.3808 + 0.7 = 5.0125
+    expect(das28esr(CASE).value).toBeCloseTo(5.01, 2)
+  })
+
+  it('必要な項目が欠けていれば計算せず、欠損項目を返す', () => {
+    const r = das28esr(input({ tenderJoints28: 6, swollenJoints28: 4 }))
+    expect(r.value).toBeNull()
+    expect(r.missing).toContain('赤血球沈降速度(ESR)')
+    expect(r.missing).toContain('患者全般評価(VAS)')
+  })
+
+  it('ESR 0 でも計算できる（下限2として扱う）', () => {
+    const r = das28esr(input({ tenderJoints28: 0, swollenJoints28: 0, esr: 0, patientGlobalVas: 0 }))
+    expect(r.value).not.toBeNull()
+    expect(Number.isFinite(r.value!)).toBe(true)
+  })
+
+  it('活動性の区分（寛解<2.6／低≦3.2／中≦5.1／高>5.1）', () => {
+    expect(das28esrLevel(2.5)).toBe('remission')
+    expect(das28esrLevel(3.2)).toBe('low')
+    expect(das28esrLevel(5.1)).toBe('moderate')
+    expect(das28esrLevel(5.2)).toBe('high')
+  })
+})
+
+describe('DAS28-CRP', () => {
+  it('CRP を mg/dL から mg/L に換算して計算する', () => {
+    // 0.56√6 + 0.28√4 + 0.36 ln(10+1) + 0.014×50 + 0.96
+    // = 1.3717 + 0.56 + 0.8632 + 0.7 + 0.96 = 4.4549
+    expect(das28crp(CASE).value).toBeCloseTo(4.45, 2)
+  })
+
+  it('CRP 0 でも計算できる', () => {
+    const r = das28crp(input({ tenderJoints28: 0, swollenJoints28: 0, crp: 0, patientGlobalVas: 0 }))
+    // 0 + 0 + 0.36 ln(1) + 0 + 0.96 = 0.96
+    expect(r.value).toBeCloseTo(0.96, 2)
+    expect(r.level).toBe('remission')
+  })
+
+  it('活動性の区分（寛解<2.3／低<2.7／中≦4.1／高>4.1）', () => {
+    expect(das28crpLevel(2.2)).toBe('remission')
+    expect(das28crpLevel(2.6)).toBe('low')
+    expect(das28crpLevel(4.1)).toBe('moderate')
+    expect(das28crpLevel(4.2)).toBe('high')
+  })
+})
+
+describe('SDAI と CDAI', () => {
+  it('SDAI = 腫脹 + 圧痛 + 患者VAS + 医師VAS + CRP(mg/dL)', () => {
+    expect(sdai(CASE).value).toBe(20)
+    expect(sdai(CASE).level).toBe('moderate')
+  })
+
+  it('CDAI は CRP を含まない', () => {
+    expect(cdai(CASE).value).toBe(19)
+    expect(cdai(CASE).level).toBe('moderate')
+  })
+
+  it('SDAI の区分（寛解≦3.3／低≦11／中≦26／高>26）', () => {
+    expect(sdaiLevel(3.3)).toBe('remission')
+    expect(sdaiLevel(11)).toBe('low')
+    expect(sdaiLevel(26)).toBe('moderate')
+    expect(sdaiLevel(26.1)).toBe('high')
+  })
+
+  it('CDAI の区分（寛解≦2.8／低≦10／中≦22／高>22）', () => {
+    expect(cdaiLevel(2.8)).toBe('remission')
+    expect(cdaiLevel(10)).toBe('low')
+    expect(cdaiLevel(22)).toBe('moderate')
+    expect(cdaiLevel(22.1)).toBe('high')
+  })
+
+  it('CDAI は CRP がなくても計算できる', () => {
+    const r = cdai(input({ tenderJoints28: 1, swollenJoints28: 1, patientGlobalVas: 0.5, physicianGlobalVas: 0.5 }))
+    expect(r.value).toBe(3)
+    expect(r.level).toBe('low')
+  })
+})
+
+describe('ACR/EULAR Boolean 寛解基準', () => {
+  it('4項目すべてを満たせば寛解', () => {
+    const r = booleanRemission(
+      input({ tenderJoints28: 1, swollenJoints28: 1, crp: 0.5, patientGlobalVas: 1 }),
+    )
+    expect(r.met).toBe(true)
+  })
+
+  it('1項目でも超えれば寛解ではない', () => {
+    const r = booleanRemission(
+      input({ tenderJoints28: 2, swollenJoints28: 1, crp: 0.5, patientGlobalVas: 1 }),
+    )
+    expect(r.met).toBe(false)
+    expect(r.detail[0]).toContain('×')
+  })
+
+  it('入力が不足していれば判定不能', () => {
+    expect(booleanRemission(input({ tenderJoints28: 1 })).met).toBeNull()
+  })
+})
+
+describe('ACR/EULAR 2010 分類基準', () => {
+  it('小関節4か所・抗体高値陽性・CRP高値・6週以上で8点（RAと分類）', () => {
+    const r = classification2010(
+      input({ smallJointsInvolved: 4, largeJointsInvolved: 0, rf: 120, crp: 0.9, durationMonths: 3 }),
+    )
+    // A=3（小関節4〜10）, B=3（高値陽性）, C=1, D=1
+    expect(r.score).toBe(8)
+    expect(r.suggestsRa).toBe(true)
+  })
+
+  it('大関節1か所・抗体陰性・炎症なし・6週未満なら0点', () => {
+    const r = classification2010(
+      input({ smallJointsInvolved: 0, largeJointsInvolved: 1, crp: 0.1, esr: 10, durationMonths: 0.5 }),
+    )
+    expect(r.score).toBe(0)
+    expect(r.suggestsRa).toBe(false)
+  })
+
+  it('10か所超（小関節を含む）は関節スコア5点', () => {
+    const r = classification2010(input({ smallJointsInvolved: 8, largeJointsInvolved: 4 }))
+    expect(r.breakdown[0]).toContain('5点')
+  })
+
+  it('低値陽性は2点', () => {
+    const r = classification2010(input({ smallJointsInvolved: 2, largeJointsInvolved: 0, rf: 30 }))
+    expect(r.breakdown.join()).toContain('低値陽性')
+  })
+
+  it('関節数が未入力なら判定しない', () => {
+    expect(classification2010(input()).score).toBeNull()
+  })
+})
+
+describe('総合評価と T2T', () => {
+  it('代表指標は SDAI が優先される', () => {
+    expect(assessRa(CASE).primary.name).toBe('SDAI')
+  })
+
+  it('CRP がなければ DAS28-ESR や CDAI にフォールバックする', () => {
+    const noCrp = input({ tenderJoints28: 6, swollenJoints28: 4, patientGlobalVas: 5, physicianGlobalVas: 4, esr: 30 })
+    expect(assessRa(noCrp).primary.name).toBe('DAS28-ESR')
+  })
+
+  it('中〜高活動性なら治療見直しのコメントを返す', () => {
+    const a = assessRa(CASE)
+    expect(a.t2tComment.join()).toContain('6か月')
+  })
+
+  it('寛解なら減量の順序に言及する', () => {
+    const remission = input({
+      tenderJoints28: 0,
+      swollenJoints28: 0,
+      patientGlobalVas: 0.5,
+      physicianGlobalVas: 0.5,
+      crp: 0.1,
+    })
+    const a = assessRa(remission)
+    expect(a.primary.score.level).toBe('remission')
+    expect(a.t2tComment.join()).toContain('グルココルチコイド')
+  })
+
+  it('発症2年以内なら window of opportunity に言及する', () => {
+    const a = assessRa({ ...CASE, durationMonths: 8 })
+    expect(a.t2tComment.join()).toContain('2年以内')
+  })
+
+  it('併存疾患に応じた注意が出る', () => {
+    const a = assessRa({
+      ...CASE,
+      comorbidity: { ...CASE.comorbidity, interstitialLungDisease: true, hepatitisBC: true, pregnancyPlan: true },
+    })
+    const joined = a.cautions.join()
+    expect(joined).toContain('間質性肺疾患')
+    expect(joined).toContain('B型')
+    expect(joined).toContain('MTX')
+  })
+
+  it('骨びらんがあれば治療強化の適応に言及する', () => {
+    const a = assessRa({ ...CASE, erosion: true })
+    expect(a.cautions.join()).toContain('骨破壊')
+  })
+})

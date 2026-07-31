@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   せつめいナビ 基本スタイル
+   - 診察室のモニタ／タブレットで高齢の患者さんが読めることを最優先
+   - 印刷（A4パンフレット）は @media print で完全に別レイアウトに切り替える
+   ========================================================================= */
+
+:root {
+  /* 患者説明画面の文字倍率。設定画面から --patient-scale を書き換える */
+  --patient-scale: 1;
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-100 text-ink font-sans antialiased;
+  font-size: 17px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 数字を等幅にして、検査値が縦に揃うようにする */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 医師が指で触る操作ボタンの最低サイズ（タブレット運用を想定） */
+@layer components {
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl px-5 py-3
+           text-base font-bold transition active:scale-[0.98]
+           disabled:cursor-not-allowed disabled:opacity-40;
+    min-height: 48px;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-card;
+  }
+  .btn-secondary {
+    @apply btn border-2 border-brand-200 bg-white text-brand-700 hover:bg-brand-50;
+  }
+  .btn-ghost {
+    @apply btn text-ink-soft hover:bg-slate-200;
+  }
+  .btn-lg {
+    @apply px-8 py-5 text-xl;
+    min-height: 64px;
+  }
+  .card {
+    @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-card;
+  }
+  .label {
+    @apply mb-1 block text-sm font-bold text-ink-soft;
+  }
+  .input {
+    @apply w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-lg
+           tnum outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100;
+    min-height: 48px;
+  }
+  .chip {
+    @apply inline-flex cursor-pointer select-none items-center gap-2 rounded-full border-2
+           border-slate-300 bg-white px-4 py-2 text-base font-semibold text-ink-soft
+           transition hover:border-brand-300;
+    min-height: 44px;
+  }
+  .chip-on {
+    @apply border-brand-500 bg-brand-50 text-brand-700;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold;
+  }
+  .section-title {
+    @apply mb-3 flex items-center gap-2 text-lg font-bold text-ink;
+  }
+  /* 医師向けの補助情報（患者さんに見せる前提ではない領域） */
+  .doctor-note {
+    @apply rounded-xl border-l-4 border-brand-400 bg-brand-50/70 px-4 py-3 text-sm leading-relaxed text-brand-800;
+  }
+  .cite {
+    @apply text-[11px] font-normal text-ink-mute;
+  }
+}
+
+/* ---------- 患者説明モード（プレゼン） ---------- */
+.patient-stage {
+  font-size: calc(1rem * var(--patient-scale));
+}
+.patient-stage h2 {
+  font-size: calc(2.1rem * var(--patient-scale));
+  line-height: 1.3;
+  font-weight: 800;
+}
+.patient-stage .lead {
+  font-size: calc(1.35rem * var(--patient-scale));
+  line-height: 1.85;
+}
+.patient-stage li {
+  font-size: calc(1.2rem * var(--patient-scale));
+  line-height: 1.8;
+}
+
+/* ふりがな（ruby）表示のON/OFF */
+.no-ruby rt {
+  display: none;
+}
+rt {
+  font-size: 0.5em;
+  font-weight: 400;
+  color: #52606d;
+}
+
+/* スクリーン表示では印刷専用要素を隠す */
+.print-only {
+  display: none;
+}
+
+/* =========================================================================
+   印刷（A4 パンフレット）
+   ========================================================================= */
+@page {
+  size: A4 portrait;
+  margin: 12mm 12mm 14mm 12mm;
+}
+
+@media print {
+  html,
+  body {
+    height: auto;
+    background: #fff !important;
+    font-size: 10.5pt;
+    line-height: 1.6;
+  }
+
+  /* アプリのUI（ヘッダー・操作ボタン等）は一切印刷しない */
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+  .print-only {
+    display: revert;
+  }
+
+  /* パンフレット本体のみを紙面に流す */
+  #root {
+    display: block !important;
+  }
+  .print-root {
+    position: static !important;
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .sheet {
+    break-after: page;
+    page-break-after: always;
+    box-shadow: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+    min-height: 0 !important;
+  }
+  .sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* 印刷時はインク節約と可読性を優先 */
+  .card,
+  .print-box {
+    border: 1pt solid #94a3b8 !important;
+    border-radius: 3pt !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+  .print-fill-light {
+    background: #f1f5f9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  svg {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  a[href]::after {
+    content: '';
+  }
+}
+
+/* 画面上でのA4プレビュー */
+.sheet {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm;
+  margin: 0 auto 10mm;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(31, 41, 51, 0.15);
+}
+
+@media screen and (max-width: 900px) {
+  .sheet {
+    width: 100%;
+    min-height: 0;
+    padding: 6mm;
+  }
+}

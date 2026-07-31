@@ -1,0 +1,19 @@
+{
+  "name": "setsumei-navi-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "せつめいナビ 院内サーバー（任意機能：マスタ共有・実施記録）",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env index.mjs",
+    "start:plain": "node index.mjs",
+    "dev": "node --env-file-if-exists=.env --watch index.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0"
+  }
+}

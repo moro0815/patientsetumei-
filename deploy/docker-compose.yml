@@ -1,0 +1,70 @@
+# せつめいナビ 院内サーバー構成
+#
+# 使い方
+#   1) .env を作る（deploy/.env）
+#        SETSUMEI_TOKEN=<openssl rand -hex 32 で生成した値>
+#        BIND_ADDR=192.168.10.20      # 院内LANのNICのIP。外に出さない
+#   2) docker compose -f deploy/docker-compose.yml up -d
+#   3) 診察室のPCから http://<BIND_ADDR>:8080 を開く
+#
+# 注意
+#   ・ports の左側を 0.0.0.0 にしないこと。院内LANのIPに固定して、外部から到達できないようにします。
+#   ・インターネット公開が必要な場合は、必ず docs/03_セキュリティと法令対応.md の
+#     要件（TLS、認証、ログ、監査、事業者の3省2ガイドライン適合）を満たしてください。
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: setsumei-navi:1.0.0
+    container_name: setsumei-navi
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      HOST: 0.0.0.0
+      DATA_DIR: /app/server/data
+      SETSUMEI_TOKEN: ${SETSUMEI_TOKEN:?SETSUMEI_TOKEN を deploy/.env に設定してください}
+      ALLOW_ORIGIN: ${ALLOW_ORIGIN:-*}
+      RECORD_RETENTION_DAYS: ${RECORD_RETENTION_DAYS:-1825}
+      TZ: Asia/Tokyo
+    ports:
+      # 院内LANのIPアドレスに固定する（例: 192.168.10.20:8080）
+      - "${BIND_ADDR:-127.0.0.1}:8080:8080"
+    volumes:
+      - setsumei-data:/app/server/data
+    # 書き込みは data ボリュームだけに限定する
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # 日次バックアップ（診療終了後に SQLite をコピーする）
+  backup:
+    image: alpine:3.20
+    container_name: setsumei-navi-backup
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      TZ: Asia/Tokyo
+    volumes:
+      - setsumei-data:/data:ro
+      - ${BACKUP_DIR:-./backup}:/backup
+    entrypoint: >
+      sh -c "apk add --no-cache sqlite tzdata >/dev/null 2>&1;
+             while true; do
+               sleep 86400;
+               ts=$$(date +%%Y%%m%%d);
+               sqlite3 /data/setsumei.sqlite \".backup '/backup/setsumei-$$ts.sqlite'\" || true;
+               find /backup -name 'setsumei-*.sqlite' -mtime +60 -delete || true;
+             done"
+
+volumes:
+  setsumei-data:
