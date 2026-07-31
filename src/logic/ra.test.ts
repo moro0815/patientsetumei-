@@ -70,11 +70,13 @@ describe('DAS28-CRP', () => {
     expect(r.level).toBe('remission')
   })
 
-  it('活動性の区分（寛解<2.3／低<2.7／中≦4.1／高>4.1）', () => {
-    expect(das28crpLevel(2.2)).toBe('remission')
-    expect(das28crpLevel(2.6)).toBe('low')
-    expect(das28crpLevel(4.1)).toBe('moderate')
-    expect(das28crpLevel(4.2)).toBe('high')
+  it('活動性の区分は既定で慣用基準（寛解<2.6／低≦3.2／中≦5.1／高>5.1）', () => {
+    // 院内のデジタル問診システムと同じ基準に揃えている。
+    // CRP調整基準（2.3/2.7/4.1）は設定で選べる（後段のテストを参照）
+    expect(das28crpLevel(2.5)).toBe('remission')
+    expect(das28crpLevel(3.2)).toBe('low')
+    expect(das28crpLevel(4.2)).toBe('moderate')
+    expect(das28crpLevel(5.2)).toBe('high')
   })
 })
 
@@ -251,12 +253,85 @@ describe('問診システムから取り込んだスコアの扱い', () => {
   it('DAS28-CRP の取り込みにも対応する', () => {
     const a = assessRa(input({ external: ext({ das28crp: 4.45 }) }))
     expect(a.das28crp.value).toBe(4.45)
-    expect(a.das28crp.level).toBe('high')
+    // 既定は慣用基準なので 4.45 は「中」（問診システムの表示と一致する）
+    expect(a.das28crp.level).toBe('moderate')
+    expect(assessRa(input({ external: ext({ das28crp: 4.45 }) }), { das28crpThresholds: 'crpAdjusted' })
+      .das28crp.level).toBe('high')
   })
 
   it('external が未設定でも従来どおり動く', () => {
     const a = assessRa(CASE)
     expect(a.sdai.value).toBe(20)
     expect(a.cautions.join()).not.toContain('一致しません')
+  })
+})
+
+describe('DAS28-CRP のカットオフ設定（院内システムとの整合）', () => {
+  it('既定（慣用基準 2.6/3.2/5.1）は問診システムと同じ区分になる', () => {
+    expect(das28crpLevel(2.5)).toBe('remission')
+    expect(das28crpLevel(3.2)).toBe('low')
+    expect(das28crpLevel(5.1)).toBe('moderate')
+    expect(das28crpLevel(5.2)).toBe('high')
+  })
+
+  it('CRP調整基準を選ぶと 2.3/2.7/4.1 になる', () => {
+    expect(das28crpLevel(2.2, 'crpAdjusted')).toBe('remission')
+    expect(das28crpLevel(2.6, 'crpAdjusted')).toBe('low')
+    expect(das28crpLevel(4.1, 'crpAdjusted')).toBe('moderate')
+    expect(das28crpLevel(4.2, 'crpAdjusted')).toBe('high')
+  })
+
+  it('同じ値でも基準によって区分が変わる（設定の意味）', () => {
+    expect(das28crpLevel(4.52, 'classic')).toBe('moderate')
+    expect(das28crpLevel(4.52, 'crpAdjusted')).toBe('high')
+  })
+
+  it('assessRa に設定を渡すと反映される', () => {
+    const classic = assessRa(CASE, { das28crpThresholds: 'classic' })
+    const adjusted = assessRa(CASE, { das28crpThresholds: 'crpAdjusted' })
+    // CASE の DAS28-CRP は 4.45
+    expect(classic.das28crp.value).toBe(adjusted.das28crp.value)
+    expect(classic.das28crp.level).toBe('moderate')
+    expect(adjusted.das28crp.level).toBe('high')
+  })
+
+  it('設定を省略すると慣用基準になる', () => {
+    expect(assessRa(CASE).das28crp.level).toBe('moderate')
+  })
+})
+
+describe('問診システムと計算式が一致すること', () => {
+  // doctor.js の実装:
+  //   das28crp = 0.56√tjc + 0.28√sjc + 0.36 ln(crp*10 + 1) + 0.014*pga(0-100) + 0.96
+  //   das28esr = 0.56√tjc + 0.28√sjc + 0.70 ln(esr) + 0.014*pga(0-100)
+  //   sdai = sjc + tjc + ega/10 + pga/10 + crp
+  //   cdai = sjc + tjc + ega/10 + pga/10
+  const tjc = 6, sjc = 4, pga = 50, ega = 40, crp = 1.2, esr = 30
+  const theirs = {
+    das28crp: 0.56 * Math.sqrt(tjc) + 0.28 * Math.sqrt(sjc) + 0.36 * Math.log(crp * 10 + 1) + 0.014 * pga + 0.96,
+    das28esr: 0.56 * Math.sqrt(tjc) + 0.28 * Math.sqrt(sjc) + 0.7 * Math.log(esr) + 0.014 * pga,
+    sdai: sjc + tjc + ega / 10 + pga / 10 + crp,
+    cdai: sjc + tjc + ega / 10 + pga / 10,
+  }
+  const mine = input({
+    tenderJoints28: tjc,
+    swollenJoints28: sjc,
+    patientGlobalVas: pga / 10,
+    physicianGlobalVas: ega / 10,
+    crp,
+    esr,
+  })
+
+  it('DAS28-CRP が一致する', () => {
+    expect(das28crp(mine).value).toBeCloseTo(theirs.das28crp, 2)
+  })
+  it('DAS28-ESR が一致する', () => {
+    expect(das28esr(mine).value).toBeCloseTo(theirs.das28esr, 2)
+  })
+  it('SDAI が一致する', () => {
+    expect(sdai(mine).value).toBeCloseTo(theirs.sdai, 2)
+  })
+  it('CDAI が一致する', () => {
+    expect(cdai(mine).value).toBeCloseTo(theirs.cdai, 2)
   })
 })

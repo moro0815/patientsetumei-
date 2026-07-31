@@ -269,7 +269,7 @@ function buildFindings(session: Session): { label: string; value: string; note?:
       out.push({ label: '身長の変化', value: `${a.heightLossCm}cm 縮んでいます`, note: '背骨のつぶれのサインです' })
     }
   } else if (disease === 'ra') {
-    const a = assessRa(session.ra)
+    const a = assessRa(session.ra, session.clinicalSettings)
     out.push({
       label: 'いまの炎症の強さ',
       value: ACTIVITY_PLAIN[a.primary.score.level],

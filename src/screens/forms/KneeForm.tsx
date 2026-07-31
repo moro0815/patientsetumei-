@@ -29,7 +29,7 @@ export function KneeForm() {
     <>
       <Section title="膝の所見">
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="部位">
+          <Field label="部位" group>
             <SegButton
               value={k.side}
               options={[
@@ -40,7 +40,7 @@ export function KneeForm() {
               onChange={(v) => setK({ side: v })}
             />
           </Field>
-          <Field label="アライメント">
+          <Field label="アライメント" group>
             <SegButton
               value={k.alignment}
               options={[

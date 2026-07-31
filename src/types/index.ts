@@ -188,8 +188,12 @@ export interface RaInput {
    */
   largeJointsInvolved: number | null
   smallJointsInvolved: number | null
-  /** HAQ-DI 0-3 */
+  /** HAQ-DI / mHAQ 0-3（問診システムから取り込む場合は mHAQ の平均値） */
   haq: number | null
+  /** 朝のこわばりの持続時間（問診システムからの取り込み。表示とカルテ記載に使う） */
+  morningStiffness: string
+  /** 前回受診と比べた調子（問診システムからの取り込み） */
+  changeFromLast: string
   /**
    * 問診システム等で既に算出済みのスコア。
    * 関節数などの内訳が取り込めない場合でも、このスコアで説明を進められるようにする。
@@ -442,6 +446,26 @@ export type ExercisePathway =
   | 'homeVisitRehab' // 訪問リハビリ
   | 'referral' // 他施設紹介
 
+// ---------------------------------------------------------------- 臨床上の設定
+
+/**
+ * 施設ごとに決める臨床判断の細かな取り決め。
+ * 院内の他システムと表示が食い違わないようにするための設定。
+ */
+export interface ClinicalSettings {
+  /**
+   * DAS28-CRP の疾患活動性区分に使うカットオフ。
+   *
+   * 'classic'     … 2.6 / 3.2 / 5.1（DAS28-ESR 由来の慣用基準を CRP にも適用）
+   * 'crpAdjusted' … 2.3 / 2.7 / 4.1（DAS28-CRP 用に調整された基準）
+   *
+   * DAS28-CRP は DAS28-ESR より低く出るため、ESR由来の基準をそのまま当てると
+   * 活動性を低く見積もることが知られている。一方で慣用基準を使う施設・システムも多い。
+   * 院内で表示が食い違わないよう、施設で1つに揃える。
+   */
+  das28crpThresholds: 'classic' | 'crpAdjusted'
+}
+
 // ---------------------------------------------------------------- セッション
 
 export interface Session {
@@ -460,6 +484,8 @@ export interface Session {
   pamphletSections: string[]
   /** 表示設定 */
   view: ViewSettings
+  /** 臨床上の設定（施設ごと） */
+  clinicalSettings: ClinicalSettings
 }
 
 export interface ViewSettings {

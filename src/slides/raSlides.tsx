@@ -17,7 +17,7 @@ import type { Session } from '@/types'
 import type { Slide, SlideBuilder } from './types'
 
 export const buildRaSlides: SlideBuilder = (session) => {
-  const a = assessRa(session.ra)
+  const a = assessRa(session.ra, session.clinicalSettings)
   const r = session.ra
   const selectedDrugs = session.plan.drugIds.map(getDrug).filter(Boolean)
   const hasMtx = session.plan.drugIds.includes('mtx')

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 /* =========================================================================
    画面の共通部品
@@ -33,19 +33,45 @@ export function Section({
   )
 }
 
+let fieldSeq = 0
+
 export function Field({
   label,
   hint,
   children,
   wide = false,
+  group = false,
 }: {
   label: string
   hint?: string
   children: ReactNode
   wide?: boolean
+  /**
+   * 中身がボタンの並び（SegButton・チップ）のときに true にする。
+   *
+   * ボタンは <label> が指せる要素ではないため、<label> で包むと
+   * 読み上げソフトが「見出し＋選択肢すべて」を1つのボタン名として読んでしまう。
+   * その場合は role="group" にして、見出しは aria-labelledby で結び付ける。
+   */
+  group?: boolean
 }) {
+  const cls = `block ${wide ? 'sm:col-span-2' : ''}`
+  const id = useMemo(() => `field-${++fieldSeq}`, [])
+
+  if (group) {
+    return (
+      <div className={cls} role="group" aria-labelledby={id}>
+        <span className="label" id={id}>
+          {label}
+        </span>
+        {children}
+        {hint && <span className="mt-1 block text-xs text-ink-mute">{hint}</span>}
+      </div>
+    )
+  }
+
   return (
-    <label className={`block ${wide ? 'sm:col-span-2' : ''}`}>
+    <label className={cls}>
       <span className="label">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-ink-mute">{hint}</span>}

@@ -146,7 +146,8 @@ const FIELDS: FieldDef[] = [
   { key: 'mmp3', label: 'MMP-3', aliases: ['MMP-3', 'MMP3'], kind: 'number', min: 0, max: 5000 },
   { key: 'accp', label: '抗CCP抗体', aliases: ['抗CCP抗体', '抗CCP', 'ACPA', 'CCP'], kind: 'number', min: 0, max: 10000, strict: true },
   { key: 'rf', label: 'RF', aliases: ['リウマトイド因子', 'リウマチ因子', 'RF定量', 'RF'], kind: 'number', min: 0, max: 10000, strict: true },
-  { key: 'haq', label: 'HAQ-DI', aliases: ['HAQ-DI', 'HAQ'], kind: 'number', min: 0, max: 3 },
+  // mHAQ（modified HAQ）は問診システムが出力する形式。HAQ-DI と同じ 0〜3 の機能指標として扱う
+  { key: 'haq', label: 'HAQ-DI／mHAQ', aliases: ['HAQ-DI', 'mHAQ', 'HAQ'], kind: 'number', min: 0, max: 3 },
   { key: 'durationMonths', label: '罹病期間(月)', aliases: ['罹病期間', '発症からの期間', '発症後'], kind: 'number', min: 0, max: 1200 },
 
   // ---- 骨密度 ----

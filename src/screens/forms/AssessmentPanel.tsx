@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useStore } from '@/state/store'
 import { Badge, Banner, Cite, DoctorNote } from '@/components/ui'
 import { assessOsteoporosis, fmtT, suggestInitialTherapy } from '@/logic/osteoporosis'
-import { ACTIVITY_LABEL, assessRa } from '@/logic/ra'
+import { ACTIVITY_LABEL, assessRa, das28crpRefLabel } from '@/logic/ra'
 import { assessLocomo, bmiCategory, calcBmi, kneeSummary, weightTarget } from '@/logic/locomo'
 import { citeLabel } from '@/data/sources'
 
@@ -137,12 +137,12 @@ function OsteoAssessment() {
 
 function RaAssessment() {
   const { session } = useStore()
-  const a = useMemo(() => assessRa(session.ra), [session.ra])
+  const a = useMemo(() => assessRa(session.ra, session.clinicalSettings), [session.ra, session.clinicalSettings])
 
   const rows = [
     { name: 'SDAI', s: a.sdai, ref: '寛解 ≦3.3／低 ≦11／中 ≦26／高 >26' },
     { name: 'CDAI', s: a.cdai, ref: '寛解 ≦2.8／低 ≦10／中 ≦22／高 >22' },
-    { name: 'DAS28-CRP', s: a.das28crp, ref: '寛解 <2.3／低 <2.7／中 ≦4.1／高 >4.1' },
+    { name: 'DAS28-CRP', s: a.das28crp, ref: das28crpRefLabel(session.clinicalSettings?.das28crpThresholds) },
     { name: 'DAS28-ESR', s: a.das28esr, ref: '寛解 <2.6／低 ≦3.2／中 ≦5.1／高 >5.1' },
   ]
 

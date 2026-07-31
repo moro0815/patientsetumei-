@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useStore } from '@/state/store'
 import { Badge, Banner } from '@/components/ui'
 import { applyParsedFields, fieldsForDisease, parseClinicalText, type ParsedField } from '@/logic/importer'
+import { MonshinPanel } from './MonshinPanel'
 
 /**
  * 外部システムからの取り込みパネル
@@ -13,8 +14,9 @@ import { applyParsedFields, fieldsForDisease, parseClinicalText, type ParsedFiel
  * 誤読があってもチェックを外せば取り込まれない。
  */
 export function ImportPanel() {
-  const { session, setSession } = useStore()
+  const { session, setSession, clinic } = useStore()
   const [open, setOpen] = useState(false)
+  const [monshinOpen, setMonshinOpen] = useState(false)
   const [text, setText] = useState('')
   const [parsed, setParsed] = useState<ParsedField[] | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
@@ -84,26 +86,47 @@ K-L分類 3
     setParsed((prev) => (prev ? prev.map((f) => (f.key === key ? { ...f, selected: !f.selected } : f)) : prev))
   }
 
+  if (monshinOpen) {
+    return (
+      <MonshinPanel
+        onClose={() => setMonshinOpen(false)}
+        onGoToPaste={() => {
+          setMonshinOpen(false)
+          setOpen(true)
+        }}
+      />
+    )
+  }
+
   if (!open) {
     return (
       <div className="rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="font-bold text-brand-800">
-              📋 問診システム・電子カルテの結果を貼り付けて取り込む
+              入力済みのデータを取り込む（再入力は不要です）
             </p>
             <p className="mt-0.5 text-sm text-ink-soft">
               {session.disease === 'ra'
-                ? 'SDAI・関節数・VAS・CRP などを、画面からコピーして貼るだけで入力できます。'
+                ? 'SDAI・関節数・VAS・CRP などを、問診システムから取り込めます。'
                 : session.disease === 'osteoporosis'
                   ? 'YAM値・身長体重・検査値を、カルテからコピーして貼るだけで入力できます。'
-                  : 'K-L分類・NRS・ロコモ度テストの結果を貼り付けて入力できます。'}
+                  : 'K-L分類・NRS・ロコモ度テストの結果を取り込めます。'}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {applied !== null && <Badge tone="good">{applied}項目を取り込みました</Badge>}
+            {clinic.monshinEnabled && (
+              <button
+                type="button"
+                className="btn-secondary !border-good-400 !text-good-600"
+                onClick={() => setMonshinOpen(true)}
+              >
+                🔗 問診システムから読み込む
+              </button>
+            )}
             <button type="button" className="btn-primary" onClick={() => setOpen(true)}>
-              貼り付けて取り込む
+              📋 貼り付けて取り込む
             </button>
           </div>
         </div>
@@ -114,10 +137,24 @@ K-L分類 3
   return (
     <div className="rounded-2xl border-2 border-brand-400 bg-white p-4 shadow-card">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-bold text-brand-800">外部システムからの取り込み</h3>
-        <button type="button" className="btn-ghost !min-h-[36px] !py-1.5" onClick={() => setOpen(false)}>
-          閉じる
-        </button>
+        <h3 className="text-lg font-bold text-brand-800">貼り付けて取り込む</h3>
+        <div className="flex items-center gap-2">
+          {clinic.monshinEnabled && (
+            <button
+              type="button"
+              className="btn-ghost !min-h-[36px] !py-1.5"
+              onClick={() => {
+                setOpen(false)
+                setMonshinOpen(true)
+              }}
+            >
+              🔗 問診システムから読み込む
+            </button>
+          )}
+          <button type="button" className="btn-ghost !min-h-[36px] !py-1.5" onClick={() => setOpen(false)}>
+            閉じる
+          </button>
+        </div>
       </div>
 
       <div
@@ -150,6 +187,14 @@ K-L分類 3
           }}
         />
       </div>
+
+      {session.disease === 'ra' && (
+        <p className="mt-2 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
+          <strong>問診システムをお使いの場合：</strong>
+          診察室画面（doctor.html）でSDAIパネルに入力 →「📋 スコアをカルテにコピー」を押して、
+          ここに貼り付けてください。関節数・VAS・CRP・SDAI・CDAI・DAS28・mHAQ がまとめて入ります。
+        </p>
+      )}
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <button type="button" className="btn-secondary" onClick={() => run(text)} disabled={!text.trim()}>

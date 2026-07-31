@@ -33,6 +33,13 @@ interface Store {
 
   screen: Screen
   go: (s: Screen) => void
+  /**
+   * 設定・資料集から元の画面へ戻る。
+   * 診察の途中で設定を開いても、診察の流れ（①〜⑤）に戻れるようにする。
+   */
+  goBack: () => void
+  /** goBack() の戻り先（ボタンの文言を変えるため） */
+  returnTo: Screen
 
   clinic: ClinicConfig
   setClinic: (c: ClinicConfig) => void
@@ -60,6 +67,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const [session, setSessionState] = useState<Session>(() => initial?.session ?? createSession('osteoporosis'))
   const [screen, setScreen] = useState<Screen>(initial ? 'input' : 'home')
+  /** 設定・資料集を開く直前にいた画面（戻り先） */
+  const [returnTo, setReturnTo] = useState<Screen>('home')
   const [urlImport, setUrlImport] = useState<UrlImportResult | null>(initial)
   const [clinic, setClinicState] = useState<ClinicConfig>(() => loadClinic())
   const [view, setViewState] = useState<ViewSettings>(() => loadViewSettings())
@@ -101,10 +110,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  // 設定・資料集へ移るときだけ、直前の画面を戻り先として覚えておく
+  const go = useCallback((next: Screen) => {
+    setScreen((cur) => {
+      const leavingFlow = next === 'settings' || next === 'library'
+      if (leavingFlow && cur !== 'settings' && cur !== 'library') setReturnTo(cur)
+      return next
+    })
+  }, [])
+
+  const goBack = useCallback(() => {
+    setScreen(returnTo)
+  }, [returnTo])
+
   const reset = useCallback((disease?: DiseaseKey) => {
     clearDraft()
     setSessionState(createSession(disease ?? 'osteoporosis'))
     setDraftSaved(false)
+    setReturnTo('home')
     setScreen('home')
   }, [])
 
@@ -142,6 +165,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSessionState((prev) => (prev.view === view ? prev : { ...prev, view }))
   }, [view])
 
+  // 臨床上の設定（DAS28-CRPのカットオフなど）も医療機関設定から同期する
+  useEffect(() => {
+    setSessionState((prev) =>
+      prev.clinicalSettings.das28crpThresholds === clinic.das28crpThresholds
+        ? prev
+        : { ...prev, clinicalSettings: { ...prev.clinicalSettings, das28crpThresholds: clinic.das28crpThresholds } },
+    )
+  }, [clinic.das28crpThresholds])
+
   const value = useMemo<Store>(
     () => ({
       session,
@@ -152,7 +184,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       persistDraft,
       draftSaved,
       screen,
-      go: setScreen,
+      go,
+      goBack,
+      returnTo,
       clinic,
       setClinic,
       view,
@@ -160,7 +194,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       urlImport,
       dismissUrlImport: () => setUrlImport(null),
     }),
-    [session, setSession, patch, reset, restoreDraft, persistDraft, draftSaved, screen, clinic, setClinic, view, setView, urlImport],
+    [session, setSession, patch, reset, restoreDraft, persistDraft, draftSaved, screen, go, goBack, returnTo, clinic, setClinic, view, setView, urlImport],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

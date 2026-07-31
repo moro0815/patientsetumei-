@@ -1,4 +1,4 @@
-import type { DiseaseKey, Session, ViewSettings } from '@/types'
+import type { ClinicalSettings, DiseaseKey, Session, ViewSettings } from '@/types'
 
 /**
  * 診察1件分の状態（セッション）
@@ -14,6 +14,11 @@ export function todayIso(): string {
   const d = new Date()
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+/** 既定は院内の問診システムと同じ慣用基準に合わせる（表示の食い違いを防ぐため） */
+export const DEFAULT_CLINICAL: ClinicalSettings = {
+  das28crpThresholds: 'classic',
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
@@ -77,6 +82,8 @@ export function createSession(disease: DiseaseKey = 'osteoporosis'): Session {
       largeJointsInvolved: null,
       smallJointsInvolved: null,
       haq: null,
+      morningStiffness: '',
+      changeFromLast: '',
       external: { sdai: null, cdai: null, das28crp: null, das28esr: null, source: '' },
       currentTherapy: [],
       comorbidity: {
@@ -116,6 +123,7 @@ export function createSession(disease: DiseaseKey = 'osteoporosis'): Session {
     shownSlideIds: [],
     pamphletSections: [],
     view: { ...DEFAULT_VIEW },
+    clinicalSettings: { ...DEFAULT_CLINICAL },
   }
 }
 
@@ -161,6 +169,7 @@ export function loadDraft(): Session | null {
       locomo: { ...base.locomo, ...parsed.locomo },
       plan: { ...base.plan, ...parsed.plan },
       view: { ...base.view, ...parsed.view },
+      clinicalSettings: { ...base.clinicalSettings, ...parsed.clinicalSettings },
     }
   } catch {
     return null

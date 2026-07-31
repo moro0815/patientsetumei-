@@ -118,7 +118,7 @@ export function buildKarte(session: Session): KarteOutput {
     lines.push('　・骨折の連鎖（1度の骨折が次の骨折を招くこと）と、生活機能への影響を説明')
     lines.push('　・治療の3本柱（薬物療法・運動療法・栄養）を説明')
   } else if (disease === 'ra') {
-    const a = assessRa(session.ra)
+    const a = assessRa(session.ra, session.clinicalSettings)
     const r = session.ra
     lines.push('■ 疾患活動性')
     lines.push(
@@ -142,6 +142,9 @@ export function buildKarte(session: Session): KarteOutput {
     if (a.booleanRemission.met !== null) {
       lines.push(`ACR/EULAR Boolean寛解基準：${a.booleanRemission.met ? '達成' : '未達成'}`)
     }
+    if (r.morningStiffness) lines.push(`朝のこわばり：${r.morningStiffness}`)
+    if (r.changeFromLast) lines.push(`前回と比べて：${r.changeFromLast}`)
+    if (r.haq !== null) lines.push(`身体機能（HAQ-DI／mHAQ）：${r.haq}`)
     if (r.erosion) lines.push('単純X線：骨びらんあり')
     if (r.affectedRegions.length > 0) lines.push(`罹患関節：${r.affectedRegions.length}領域（説明図に記録）`)
     if (a.classification2010.score !== null) {
@@ -322,7 +325,7 @@ export function buildQuickSummary(session: Session): string {
     if (a.heightLossCm !== null && a.heightLossCm >= 2) bits.push(`身長-${a.heightLossCm}cm`)
     parts.push(`[骨粗鬆症] ${bits.join(' / ')}`)
   } else if (disease === 'ra') {
-    const a = assessRa(session.ra)
+    const a = assessRa(session.ra, session.clinicalSettings)
     const r = session.ra
     const bits: string[] = []
     if (a.primary.score.value !== null) {

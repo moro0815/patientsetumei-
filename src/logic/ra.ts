@@ -1,4 +1,4 @@
-import type { RaActivityLevel, RaAssessment, RaInput, RaScore } from '@/types'
+import type { ClinicalSettings, RaActivityLevel, RaAssessment, RaInput, RaScore } from '@/types'
 
 /**
  * 関節リウマチの疾患活動性評価と T2T（Treat to Target）の判定
@@ -42,7 +42,7 @@ export function das28esr(input: RaInput): RaScore {
 }
 
 /** DAS28-CRP = 0.56√TJC28 + 0.28√SJC28 + 0.36 ln(CRP[mg/L]+1) + 0.014 × GH(0-100mm) + 0.96 */
-export function das28crp(input: RaInput): RaScore {
+export function das28crp(input: RaInput, mode: ClinicalSettings['das28crpThresholds'] = 'classic'): RaScore {
   const missing: string[] = []
   const { tenderJoints28: tjc, swollenJoints28: sjc, crp, patientGlobalVas: gh } = input
   if (tjc === null) missing.push('圧痛関節数')
@@ -59,7 +59,7 @@ export function das28crp(input: RaInput): RaScore {
     0.014 * (gh! * 10) +
     0.96
   const value = round2(v)
-  return { value, level: das28crpLevel(value), missing: [] }
+  return { value, level: das28crpLevel(value, mode), missing: [] }
 }
 
 /** DAS28-ESR：寛解 <2.6／低 ≦3.2／中 ≦5.1／高 >5.1 */
@@ -70,12 +70,37 @@ export function das28esrLevel(v: number): RaActivityLevel {
   return 'high'
 }
 
-/** DAS28-CRP：寛解 <2.3／低 <2.7／中 ≦4.1／高 >4.1 */
-export function das28crpLevel(v: number): RaActivityLevel {
-  if (v < 2.3) return 'remission'
-  if (v < 2.7) return 'low'
-  if (v <= 4.1) return 'moderate'
+/**
+ * DAS28-CRP の活動性区分。
+ *
+ * 'classic'（既定）… 2.6 / 3.2 / 5.1
+ *   DAS28-ESR 用に定められた慣用基準を CRP にも当てはめる方法。国内外で広く使われており、
+ *   院内のデジタル問診システムもこの基準を採用している。
+ * 'crpAdjusted' … 2.3 / 2.7 / 4.1
+ *   DAS28-CRP は DAS28-ESR より低く出るため、CRP版に合わせて調整された基準。
+ *   慣用基準では活動性を低く見積もることがある、という指摘に基づく。
+ *
+ * 同じ患者で施設内の別システムと区分が食い違うと混乱するため、
+ * 施設ごとにどちらかへ揃える設定にしている。
+ */
+export function das28crpLevel(v: number, mode: ClinicalSettings['das28crpThresholds'] = 'classic'): RaActivityLevel {
+  if (mode === 'crpAdjusted') {
+    if (v < 2.3) return 'remission'
+    if (v < 2.7) return 'low'
+    if (v <= 4.1) return 'moderate'
+    return 'high'
+  }
+  if (v < 2.6) return 'remission'
+  if (v <= 3.2) return 'low'
+  if (v <= 5.1) return 'moderate'
   return 'high'
+}
+
+/** 画面に出す基準値の説明 */
+export function das28crpRefLabel(mode: ClinicalSettings['das28crpThresholds'] = 'classic'): string {
+  return mode === 'crpAdjusted'
+    ? '寛解 <2.3／低 <2.7／中 ≦4.1／高 >4.1（CRP調整基準）'
+    : '寛解 <2.6／低 ≦3.2／中 ≦5.1／高 >5.1（慣用基準）'
 }
 
 // ---------------------------------------------------------------- SDAI / CDAI
@@ -275,12 +300,20 @@ function reconcile(
   return { ...computed, source: 'computed' }
 }
 
-export function assessRa(input: RaInput): RaAssessment {
+export function assessRa(input: RaInput, settings?: ClinicalSettings): RaAssessment {
   const cautions: string[] = []
+  const mode = settings?.das28crpThresholds ?? 'classic'
   const ext = input.external ?? { sdai: null, cdai: null, das28crp: null, das28esr: null, source: '' }
 
   const esrScore = reconcile(das28esr(input), ext.das28esr, das28esrLevel, 0.15, 'DAS28-ESR', cautions)
-  const crpScore = reconcile(das28crp(input), ext.das28crp, das28crpLevel, 0.15, 'DAS28-CRP', cautions)
+  const crpScore = reconcile(
+    das28crp(input, mode),
+    ext.das28crp,
+    (v) => das28crpLevel(v, mode),
+    0.15,
+    'DAS28-CRP',
+    cautions,
+  )
   const sdaiScore = reconcile(sdai(input), ext.sdai, sdaiLevel, 0.5, 'SDAI', cautions)
   const cdaiScore = reconcile(cdai(input), ext.cdai, cdaiLevel, 0.5, 'CDAI', cautions)
   const boolRem = booleanRemission(input)

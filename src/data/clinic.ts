@@ -47,6 +47,20 @@ export interface ClinicConfig {
   rehabStaff: string
   /** 骨粗鬆症マネージャーの在籍 */
   olsNote: string
+  /**
+   * 問診システム（monshin-tablet）のURL。
+   * 空文字 = せつめいナビと同じサーバーから配信されている（推奨構成）。
+   * 別のサーバーから使う場合のみ 'http://192.168.1.20:8090' のように指定する
+   * （その場合は問診サーバー側に CORS の設定が必要）。
+   */
+  monshinBaseUrl: string
+  /** 問診システムとの連携を使うか */
+  monshinEnabled: boolean
+  /**
+   * DAS28-CRP の活動性区分に使うカットオフ。
+   * 院内の問診システムは慣用基準（2.6/3.2/5.1）を使っているため、既定を 'classic' にしている。
+   */
+  das28crpThresholds: 'classic' | 'crpAdjusted'
 }
 
 export const DEFAULT_CLINIC: ClinicConfig = {
@@ -117,6 +131,9 @@ export const DEFAULT_CLINIC: ClinicConfig = {
   ],
   rehabStaff: '理学療法士 〇名・作業療法士 〇名',
   olsNote: '骨粗鬆症マネージャー（日本骨粗鬆症学会認定）が在籍し、治療の継続をサポートします。',
+  monshinBaseUrl: '',
+  monshinEnabled: true,
+  das28crpThresholds: 'classic',
 }
 
 const STORAGE_KEY = 'setsumei-navi:clinic'

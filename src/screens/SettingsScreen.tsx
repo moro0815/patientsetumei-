@@ -4,6 +4,7 @@ import { Banner, Chip, CopyButton, Field, SegButton, Section, TextInput } from '
 import { DEFAULT_CLINIC, resetClinic, type ClinicConfig, type ExerciseProgram } from '@/data/clinic'
 import { FEE_ITEMS, FEE_MASTER_VERIFIED_AT } from '@/data/fees'
 import { buildSampleUrl, URL_PARAM_DOC } from '@/logic/urlParams'
+import { checkConnection } from '@/logic/monshin'
 
 /**
  * 設定・マスタ編集
@@ -12,9 +13,10 @@ import { buildSampleUrl, URL_PARAM_DOC } from '@/logic/urlParams'
  * 端末ごとの表示設定を下に置いている。
  */
 export function SettingsScreen() {
-  const { clinic, setClinic, view, setView, go } = useStore()
+  const { clinic, setClinic, view, setView, goBack, returnTo } = useStore()
   const [draft, setDraft] = useState<ClinicConfig>(clinic)
   const [saved, setSaved] = useState(false)
+  const [monshinCheck, setMonshinCheck] = useState('')
   // 連携用URLの見本は、いま開いているアドレスを基準に作る
   const baseUrl =
     typeof window !== 'undefined' && window.location.protocol.startsWith('http')
@@ -38,8 +40,8 @@ export function SettingsScreen() {
           <p className="text-sm text-ink-mute">この端末のブラウザに保存されます（院内の全端末で設定する必要があります）</p>
         </div>
         <div className="flex gap-2">
-          <button type="button" className="btn-ghost" onClick={() => go('home')}>
-            ← 戻る
+          <button type="button" className="btn-ghost" onClick={goBack}>
+            {returnTo === 'home' ? '← 戻る' : '← 診察の続きへ戻る'}
           </button>
           <button
             type="button"
@@ -196,7 +198,7 @@ export function SettingsScreen() {
 
         <Section title="表示の設定（この端末のみ）" subtitle="診察室のモニタサイズや患者さんの見えやすさに合わせて調整します">
           <div className="space-y-4">
-            <Field label="説明画面の文字の大きさ">
+            <Field label="説明画面の文字の大きさ" group>
               <SegButton
                 value={String(view.patientScale)}
                 options={[
@@ -208,7 +210,7 @@ export function SettingsScreen() {
                 onChange={(v) => setView({ patientScale: Number(v) })}
               />
             </Field>
-            <Field label="パンフレットの文字の大きさ">
+            <Field label="パンフレットの文字の大きさ" group>
               <SegButton
                 value={view.pamphletScale}
                 options={[
@@ -234,12 +236,72 @@ export function SettingsScreen() {
           subtitle="電子カルテと直接つながなくても、次の3つの方法でデータを渡せます"
         >
           <div className="space-y-4">
+            <div className="rounded-xl border-2 border-good-400 bg-good-50/60 p-4">
+              <p className="font-bold text-good-600">
+                ⓪ 問診システム（デジタル問診）との直接連携
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+                院内のデジタル問診システム（monshin-tablet／既定ポート 8090）から、当日の問診一覧を直接読み込めます。
+                患者さんを選ぶだけで、診察券番号・氏名・年齢・性別と、リウマチ再診問診の回答
+                （患者全般評価VAS・mHAQ・朝のこわばり・前回との比較）が入ります。
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Chip
+                  on={draft.monshinEnabled}
+                  onClick={() => set({ monshinEnabled: !draft.monshinEnabled })}
+                >
+                  問診システムとの連携を使う
+                </Chip>
+                <button
+                  type="button"
+                  className="btn-secondary !min-h-[40px] !py-1.5"
+                  onClick={async () => {
+                    setMonshinCheck('確認中…')
+                    const r = await checkConnection(draft.monshinBaseUrl)
+                    setMonshinCheck(r.message)
+                  }}
+                >
+                  接続を確認する
+                </button>
+              </div>
+              <div className="mt-3">
+                <Field
+                  label="問診システムのURL"
+                  hint="空欄 = せつめいナビと同じサーバーから配信している場合（推奨。設定不要で動きます）"
+                >
+                  <TextInput
+                    value={draft.monshinBaseUrl}
+                    onChange={(v) => set({ monshinBaseUrl: v })}
+                    placeholder="（空欄のまま） または http://192.168.1.20:8090"
+                  />
+                </Field>
+              </div>
+              {monshinCheck && (
+                <p className="mt-2 whitespace-pre-wrap rounded-lg bg-white p-2 text-sm text-ink-soft">{monshinCheck}</p>
+              )}
+              <Banner tone="info" title="いちばん簡単な導入方法">
+                ビルドした <code className="font-mono">dist/</code> を、問診システムのフォルダに
+                <code className="font-mono">setsumei</code> という名前でコピーしてください
+                （<code className="font-mono">monshin-tablet/setsumei/</code>）。
+                その後 <code className="font-mono">http://（受付PCのIP）:8090/setsumei/</code> を開けば、
+                同じサーバーからの配信になるため<strong>設定なしで連携できます</strong>。
+                <br />
+                別のサーバーから使う場合は、問診システム側に CORS ヘッダーの追加が必要です
+                （手順は deploy/monshin-integration/README.md）。
+              </Banner>
+              <p className="mt-2 text-xs text-ink-mute">
+                ※関節数・CRP・SDAI は診察室で入力する値のため、問診システムの診察室画面（doctor.html）の
+                「📋 スコアをカルテにコピー」を押して、①の貼り付け取り込みに貼ってください。
+              </p>
+            </div>
+
             <div className="rounded-xl border-2 border-brand-200 bg-brand-50/50 p-4">
               <p className="font-bold text-brand-800">① 貼り付け取り込み（すぐ使えます・設定不要）</p>
               <p className="mt-1 text-sm leading-relaxed text-ink-soft">
                 入力画面の上にある「貼り付けて取り込む」を開き、問診システムの結果画面や
                 電子カルテの検査結果を選択してコピーし、貼り付けるだけです。
                 「圧痛関節数：6」「腰椎YAM 64%」のように<strong>項目名と数値が同じ行にあれば</strong>読み取れます。
+                院内のデジタル問診システムの「📋 スコアをカルテにコピー」の出力形式にも対応済みです。
                 読み取った内容は必ず確認画面に出るので、誤読があればチェックを外せます。
               </p>
               <p className="mt-1 text-xs text-ink-mute">
@@ -313,6 +375,46 @@ export function SettingsScreen() {
                 </Banner>
               </div>
             </div>
+          </div>
+        </Section>
+
+        <Section
+          title="臨床判断の基準（施設で1つに揃えます）"
+          subtitle="院内の他システムと表示が食い違わないようにするための設定です"
+        >
+          <Field
+            label="DAS28-CRP の活動性区分に使うカットオフ"
+            hint="同じ数値でも基準が違うと区分名が変わります。院内で1つに揃えてください"
+            group
+          >
+            <SegButton
+              value={draft.das28crpThresholds}
+              options={[
+                { value: 'classic', label: '慣用基準 2.6 / 3.2 / 5.1' },
+                { value: 'crpAdjusted', label: 'CRP調整基準 2.3 / 2.7 / 4.1' },
+              ]}
+              onChange={(v) => set({ das28crpThresholds: v })}
+            />
+          </Field>
+          <div className="mt-3">
+            <Banner tone="warn" title="院内のデジタル問診システムとの整合について" icon="⚠">
+              <p>
+                問診システム（doctor.html）は <strong>慣用基準（2.6 / 3.2 / 5.1）</strong> を採用しています。
+                本システムの既定も同じ「慣用基準」にしてあるため、そのままお使いいただければ
+                両方の画面で同じ区分が表示されます。
+              </p>
+              <p className="mt-2">
+                DAS28-CRP は DAS28-ESR より低く出るため、ESR由来の慣用基準をそのまま当てると
+                活動性を低めに見積もることが知られています。より厳しく判定したい場合は
+                「CRP調整基準」を選べますが、
+                <strong>その場合は問診システム側の基準も合わせて変更してください</strong>
+                （同じ患者で区分が食い違うと混乱のもとになります）。
+              </p>
+              <p className="mt-2 text-xs">
+                例：DAS28-CRP 4.52 → 慣用基準では「中疾患活動性」、CRP調整基準では「高疾患活動性」。
+                なお SDAI・CDAI・DAS28-ESR の基準と、計算式そのものは両システムで一致しています。
+              </p>
+            </Banner>
           </div>
         </Section>
 

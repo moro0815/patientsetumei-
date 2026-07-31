@@ -72,7 +72,7 @@ export function InputScreen() {
               <Field label="年齢">
                 <NumberInput value={p.age} min={0} max={120} unit="歳" onChange={(v) => patch('patient', { age: v })} />
               </Field>
-              <Field label="性別">
+              <Field label="性別" group>
                 <SegButton
                   value={p.sex}
                   options={[

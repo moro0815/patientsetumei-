@@ -50,7 +50,7 @@ type Tab = 'sources' | 'figures' | 'drugs' | 'exercises' | 'nutrition'
  * - 図表を一覧で見られるようにする（スタッフ研修・患者説明の準備に使える）
  */
 export function LibraryScreen() {
-  const { go } = useStore()
+  const { goBack, returnTo } = useStore()
   const [tab, setTab] = useState<Tab>('sources')
 
   const tabs: { key: Tab; label: string }[] = [
@@ -65,8 +65,8 @@ export function LibraryScreen() {
     <div className="mx-auto max-w-6xl px-4 py-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-extrabold text-ink">資料集</h2>
-        <button type="button" className="btn-ghost" onClick={() => go('home')}>
-          ← 戻る
+        <button type="button" className="btn-ghost" onClick={goBack}>
+          {returnTo === 'home' ? '← 戻る' : '← 診察の続きへ戻る'}
         </button>
       </div>
 
