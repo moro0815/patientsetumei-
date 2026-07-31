@@ -1,7 +1,9 @@
 import { useStore } from '@/state/store'
-import { Field, NumberInput, SegButton, Section, TextInput } from '@/components/ui'
+import { Banner, CopyButton, Field, NumberInput, SegButton, Section, TextInput } from '@/components/ui'
+import { ImportPanel } from '@/components/ImportPanel'
 import { DISEASE_LABEL } from '@/state/session'
 import { calcBmi } from '@/logic/locomo'
+import { buildValuesLine } from '@/logic/karte'
 import { OsteoForm } from './forms/OsteoForm'
 import { RaForm } from './forms/RaForm'
 import { KneeForm } from './forms/KneeForm'
@@ -16,7 +18,7 @@ import { AssessmentPanel } from './forms/AssessmentPanel'
  * - 入力するとすぐ右側の判定が更新される
  */
 export function InputScreen() {
-  const { session, patch, go } = useStore()
+  const { session, patch, go, urlImport, dismissUrlImport } = useStore()
   const p = session.patient
   const bmi = calcBmi(p.heightCm, p.weightKg)
 
@@ -38,6 +40,27 @@ export function InputScreen() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_460px]">
         <div className="space-y-5">
+          {urlImport && (
+            <Banner tone="good" title="外部システムから患者データを受け取りました" icon="✓">
+              <p>
+                取り込んだ項目：{urlImport.applied.join('、')}
+              </p>
+              {urlImport.ignored.length > 0 && (
+                <p className="mt-1 text-alert-600">
+                  取り込めなかった項目：{urlImport.ignored.join('、')}（値をご確認ください）
+                </p>
+              )}
+              <p className="mt-1 text-xs text-ink-mute">
+                内容を確認し、必要に応じて修正してください。ブラウザのURLからは患者データを消去済みです。
+              </p>
+              <button type="button" className="btn-ghost mt-2 !min-h-[36px] !py-1.5" onClick={dismissUrlImport}>
+                確認しました
+              </button>
+            </Banner>
+          )}
+
+          <ImportPanel />
+
           <Section title="患者さんの基本情報" subtitle="氏名の入力は任意です。受付番号だけでも運用できます">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Field label="カルテ番号・受付番号">
@@ -102,9 +125,12 @@ export function InputScreen() {
         {/* 判定パネル（医師向け・画面右に固定） */}
         <aside className="xl:sticky xl:top-20 xl:self-start">
           <div className="card border-brand-200 bg-brand-50/40">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-lg font-bold text-brand-800">自動判定（医師向け）</h3>
-              <span className="badge bg-brand-100 text-brand-700">参考</span>
+              <div className="flex items-center gap-2">
+                <CopyButton size="sm" label="検査値をコピー" text={buildValuesLine(session)} />
+                <span className="badge bg-brand-100 text-brand-700">参考</span>
+              </div>
             </div>
             <div className="max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
               <AssessmentPanel />

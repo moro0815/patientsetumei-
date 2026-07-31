@@ -10,6 +10,7 @@ import {
 import type { ClinicConfig } from '@/data/clinic'
 import { loadClinic, saveClinic } from '@/data/clinic'
 import type { DiseaseKey, Session, ViewSettings } from '@/types'
+import { sessionFromSearchParams, type UrlImportResult } from '@/logic/urlParams'
 import {
   clearDraft,
   createSession,
@@ -38,16 +39,41 @@ interface Store {
 
   view: ViewSettings
   setView: (v: Partial<ViewSettings>) => void
+
+  /** URL連携で取り込んだ内容（入力画面で1度だけ通知を出す） */
+  urlImport: UrlImportResult | null
+  dismissUrlImport: () => void
 }
 
 const Ctx = createContext<Store | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [session, setSessionState] = useState<Session>(() => createSession('osteoporosis'))
-  const [screen, setScreen] = useState<Screen>('home')
+  // URL に連携パラメータが付いていれば、そこからセッションを組み立てて入力画面から始める
+  const initial = useMemo(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      return sessionFromSearchParams(window.location.search)
+    } catch {
+      return null
+    }
+  }, [])
+
+  const [session, setSessionState] = useState<Session>(() => initial?.session ?? createSession('osteoporosis'))
+  const [screen, setScreen] = useState<Screen>(initial ? 'input' : 'home')
+  const [urlImport, setUrlImport] = useState<UrlImportResult | null>(initial)
   const [clinic, setClinicState] = useState<ClinicConfig>(() => loadClinic())
   const [view, setViewState] = useState<ViewSettings>(() => loadViewSettings())
   const [draftSaved, setDraftSaved] = useState(false)
+
+  // 患者データがブラウザの履歴・タイトルバーに残らないよう、読み込み直後にURLから消す
+  useEffect(() => {
+    if (!initial) return
+    try {
+      window.history.replaceState(null, '', window.location.pathname)
+    } catch {
+      /* file:// などで失敗しても動作に影響はない */
+    }
+  }, [initial])
 
   // 患者説明画面の文字倍率をCSS変数に反映する
   useEffect(() => {
@@ -131,8 +157,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setClinic,
       view,
       setView,
+      urlImport,
+      dismissUrlImport: () => setUrlImport(null),
     }),
-    [session, setSession, patch, reset, restoreDraft, persistDraft, draftSaved, screen, clinic, setClinic, view, setView],
+    [session, setSession, patch, reset, restoreDraft, persistDraft, draftSaved, screen, clinic, setClinic, view, setView, urlImport],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

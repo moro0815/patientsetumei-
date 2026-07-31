@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useStore } from '@/state/store'
-import { Banner, Chip, Field, SegButton, Section, TextInput } from '@/components/ui'
+import { Banner, Chip, CopyButton, Field, SegButton, Section, TextInput } from '@/components/ui'
 import { DEFAULT_CLINIC, resetClinic, type ClinicConfig, type ExerciseProgram } from '@/data/clinic'
 import { FEE_ITEMS, FEE_MASTER_VERIFIED_AT } from '@/data/fees'
+import { buildSampleUrl, URL_PARAM_DOC } from '@/logic/urlParams'
 
 /**
  * 設定・マスタ編集
@@ -14,6 +15,11 @@ export function SettingsScreen() {
   const { clinic, setClinic, view, setView, go } = useStore()
   const [draft, setDraft] = useState<ClinicConfig>(clinic)
   const [saved, setSaved] = useState(false)
+  // 連携用URLの見本は、いま開いているアドレスを基準に作る
+  const baseUrl =
+    typeof window !== 'undefined' && window.location.protocol.startsWith('http')
+      ? `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}`
+      : 'http://192.168.10.20:8080'
 
   const set = (v: Partial<ClinicConfig>) => {
     setDraft((prev) => ({ ...prev, ...v }))
@@ -219,6 +225,93 @@ export function SettingsScreen() {
               <Chip on={view.showDoctorNote} onClick={() => setView({ showDoctorNote: !view.showDoctorNote })}>
                 説明画面に医師用メモを表示する
               </Chip>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          title="問診システム・電子カルテとの連携"
+          subtitle="電子カルテと直接つながなくても、次の3つの方法でデータを渡せます"
+        >
+          <div className="space-y-4">
+            <div className="rounded-xl border-2 border-brand-200 bg-brand-50/50 p-4">
+              <p className="font-bold text-brand-800">① 貼り付け取り込み（すぐ使えます・設定不要）</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+                入力画面の上にある「貼り付けて取り込む」を開き、問診システムの結果画面や
+                電子カルテの検査結果を選択してコピーし、貼り付けるだけです。
+                「圧痛関節数：6」「腰椎YAM 64%」のように<strong>項目名と数値が同じ行にあれば</strong>読み取れます。
+                読み取った内容は必ず確認画面に出るので、誤読があればチェックを外せます。
+              </p>
+              <p className="mt-1 text-xs text-ink-mute">
+                対応項目：SDAI・CDAI・DAS28・圧痛/腫脹関節数・患者/医師VAS・CRP・ESR・RF・抗CCP・MMP-3・HAQ・
+                罹病期間／腰椎・大腿骨のYAMとTスコア・FRAX・Ca・25(OH)D・TRACP-5b・P1NP・eGFR／
+                K-L分類・NRS・ロコモ25・2ステップ値／年齢・性別・身長・体重・カルテ番号
+              </p>
+            </div>
+
+            <div className="rounded-xl border-2 border-slate-200 p-4">
+              <p className="font-bold text-ink">② ファイル読み込み</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+                問診システムから CSV・TSV・テキストで書き出せる場合は、そのファイルを
+                取り込みパネルにドラッグ＆ドロップしてください。項目名の読み取り方は①と同じです。
+              </p>
+            </div>
+
+            <div className="rounded-xl border-2 border-slate-200 p-4">
+              <p className="font-bold text-ink">③ URL連携（問診システム側にリンクを置ける場合）</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+                問診システムや電子カルテに「せつめいナビを開く」ボタン／リンクを作れる場合は、
+                下のような URL を組み立てて渡すと、入力ゼロで説明を始められます。
+                患者データは<strong>読み込んだ直後にURLから消去</strong>され、ブラウザの履歴には残りません。
+              </p>
+
+              <div className="mt-3 space-y-2">
+                {(['ra', 'osteoporosis', 'kneeOA'] as const).map((d) => (
+                  <div key={d} className="rounded-lg bg-slate-100 p-2">
+                    <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-ink-soft">
+                        {d === 'ra' ? '関節リウマチ' : d === 'osteoporosis' ? '骨粗鬆症' : '変形性膝関節症・ロコモ'}の例
+                      </span>
+                      <CopyButton size="sm" label="URLをコピー" text={buildSampleUrl(baseUrl, d)} />
+                    </div>
+                    <code className="block break-all font-mono text-xs text-ink-soft">{buildSampleUrl(baseUrl, d)}</code>
+                  </div>
+                ))}
+              </div>
+
+              <details className="mt-3">
+                <summary className="cursor-pointer text-sm font-bold text-brand-700">
+                  使えるパラメータの一覧（問診システムの担当者にお渡しください）
+                </summary>
+                <div className="mt-2 overflow-x-auto">
+                  <table className="w-full min-w-[480px] text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-left text-xs text-ink-mute">
+                        <th className="py-1">パラメータ</th>
+                        <th className="py-1">内容</th>
+                        <th className="py-1">書き方</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {URL_PARAM_DOC.map((p) => (
+                        <tr key={p.param} className="border-b border-slate-100">
+                          <td className="py-1 font-mono text-xs">{p.param}</td>
+                          <td className="py-1">{p.label}</td>
+                          <td className="py-1 font-mono text-xs text-ink-mute">{p.example}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+
+              <div className="mt-3">
+                <Banner tone="warn" title="URL連携を使うときの注意">
+                  URL には患者データが含まれます。院内サーバー経由で使う場合、
+                  サーバーのアクセスログに URL が記録されることがあります。
+                  ログに患者データを残したくない場合は、①の貼り付け取り込みをお使いください。
+                </Banner>
+              </div>
             </div>
           </div>
         </Section>

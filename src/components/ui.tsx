@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 /* =========================================================================
    画面の共通部品
@@ -306,29 +306,66 @@ export function VasSlider({
   )
 }
 
-/** コピーボタン（カルテ貼り付け用） */
-export function CopyButton({ text, label = 'コピー' }: { text: string; label?: string }) {
+/**
+ * コピーボタン（電子カルテ貼り付け用）
+ *
+ * 診察中に確認ダイアログが出ると流れが止まるため、
+ * ボタン自体が「コピーしました」に変わる方式にしている。
+ * クリップボードAPIが使えない環境（非HTTPS の院内サーバーなど）でも
+ * execCommand にフォールバックして必ずコピーできるようにする。
+ */
+export function CopyButton({
+  text,
+  label = 'コピー',
+  size = 'md',
+  tone = 'secondary',
+}: {
+  text: string
+  label?: string
+  size?: 'sm' | 'md'
+  tone?: 'secondary' | 'primary'
+}) {
+  const [done, setDone] = useState(false)
+
+  const copy = async () => {
+    let ok = false
+    try {
+      await navigator.clipboard.writeText(text)
+      ok = true
+    } catch {
+      try {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        ta.setAttribute('readonly', '')
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.select()
+        ok = document.execCommand('copy')
+        document.body.removeChild(ta)
+      } catch {
+        ok = false
+      }
+    }
+    if (ok) {
+      setDone(true)
+      window.setTimeout(() => setDone(false), 1800)
+    } else {
+      alert('コピーできませんでした。テキストを選択して Ctrl+C でコピーしてください。')
+    }
+  }
+
+  const base = tone === 'primary' ? 'btn-primary' : 'btn-secondary'
+  const compact = size === 'sm' ? '!min-h-[36px] !px-3 !py-1.5 !text-sm' : ''
+
   return (
     <button
       type="button"
-      className="btn-secondary"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(text)
-          alert('クリップボードにコピーしました。電子カルテに貼り付けてください。')
-        } catch {
-          // クリップボードAPIが使えない環境（古いブラウザ・非HTTPS）向けの代替
-          const ta = document.createElement('textarea')
-          ta.value = text
-          document.body.appendChild(ta)
-          ta.select()
-          document.execCommand('copy')
-          document.body.removeChild(ta)
-          alert('クリップボードにコピーしました。')
-        }
-      }}
+      className={`${base} ${compact} ${done ? '!border-good-400 !bg-good-50 !text-good-600' : ''}`}
+      onClick={copy}
+      title="クリックしてコピーし、電子カルテに貼り付けてください"
     >
-      📋 {label}
+      {done ? '✓ コピーしました' : `📋 ${label}`}
     </button>
   )
 }

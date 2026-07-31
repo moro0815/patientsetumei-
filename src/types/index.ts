@@ -190,6 +190,19 @@ export interface RaInput {
   smallJointsInvolved: number | null
   /** HAQ-DI 0-3 */
   haq: number | null
+  /**
+   * 問診システム等で既に算出済みのスコア。
+   * 関節数などの内訳が取り込めない場合でも、このスコアで説明を進められるようにする。
+   * 内訳と両方ある場合は本システムの計算値を優先し、乖離があれば警告を出す。
+   */
+  external: {
+    sdai: number | null
+    cdai: number | null
+    das28crp: number | null
+    das28esr: number | null
+    /** 取り込み元の名称（記録に残す） */
+    source: string
+  }
   /** 現在の治療 */
   currentTherapy: string[]
   /** 併存症・注意事項 */
@@ -223,6 +236,12 @@ export interface RaScore {
   level: RaActivityLevel
   /** 計算に使えなかった欠損項目 */
   missing: string[]
+  /**
+   * 値の出どころ。
+   * 'computed' = 本システムが関節数などから計算した
+   * 'external' = 問診システム等から取り込んだ値をそのまま使った
+   */
+  source?: 'computed' | 'external'
 }
 
 export interface RaAssessment {

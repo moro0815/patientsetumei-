@@ -1,5 +1,5 @@
 import { useStore } from '@/state/store'
-import { Chip, Field, NumberInput, Section, TextInput, VasSlider } from '@/components/ui'
+import { Banner, Chip, Field, NumberInput, Section, TextInput, VasSlider } from '@/components/ui'
 import type { RaInput, RaJointRegion } from '@/types'
 
 const REGION_GROUPS: { label: string; items: { key: RaJointRegion; label: string }[] }[] = [
@@ -108,6 +108,66 @@ export function RaForm() {
               rightLabel="非常に高い"
             />
           </div>
+        </div>
+      </Section>
+
+      <Section
+        title="問診システムで算出済みのスコア（任意）"
+        subtitle="関節数などの内訳が取り込めない場合でも、この欄にスコアを入れれば説明を進められます"
+      >
+        <div className="grid gap-4 sm:grid-cols-4">
+          <Field label="SDAI">
+            <NumberInput
+              value={r.external.sdai}
+              step={0.1}
+              min={0}
+              max={100}
+              onChange={(v) => set({ external: { ...r.external, sdai: v } })}
+            />
+          </Field>
+          <Field label="CDAI">
+            <NumberInput
+              value={r.external.cdai}
+              step={0.1}
+              min={0}
+              max={100}
+              onChange={(v) => set({ external: { ...r.external, cdai: v } })}
+            />
+          </Field>
+          <Field label="DAS28-CRP">
+            <NumberInput
+              value={r.external.das28crp}
+              step={0.01}
+              min={0}
+              max={10}
+              onChange={(v) => set({ external: { ...r.external, das28crp: v } })}
+            />
+          </Field>
+          <Field label="DAS28-ESR">
+            <NumberInput
+              value={r.external.das28esr}
+              step={0.01}
+              min={0}
+              max={10}
+              onChange={(v) => set({ external: { ...r.external, das28esr: v } })}
+            />
+          </Field>
+        </div>
+        <div className="mt-3 max-w-md">
+          <Field label="取り込み元（カルテ記載に残ります）">
+            <TextInput
+              value={r.external.source}
+              placeholder="例：問診システム"
+              onChange={(v) => set({ external: { ...r.external, source: v } })}
+            />
+          </Field>
+        </div>
+        <div className="mt-3">
+          <Banner tone="neutral" title="内訳と両方入っている場合の扱い">
+            上の関節所見・検査値から計算できる場合は<strong>計算値を優先</strong>して表示します。
+            計算値とここに入れた値が食い違うときは、転記ミスの可能性として画面に警告を出します。
+            内訳が足りず計算できない場合は、ここに入れた値をそのまま使います。
+          </Banner>
         </div>
       </Section>
 

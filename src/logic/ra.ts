@@ -247,11 +247,42 @@ export function classification2010(input: RaInput): {
 
 // ---------------------------------------------------------------- 総合評価
 
+/**
+ * 問診システム等から取り込んだスコアの扱い。
+ *
+ * - 内訳（関節数・VAS・CRP）が揃っていれば本システムの計算値を優先する
+ * - 内訳が足りず計算できない場合は、取り込んだ値をそのまま採用する
+ * - 両方あって食い違う場合は計算値を採用したうえで警告を出す（転記ミスの検出）
+ */
+function reconcile(
+  computed: RaScore,
+  external: number | null,
+  levelOf: (v: number) => RaActivityLevel,
+  tolerance: number,
+  name: string,
+  cautions: string[],
+): RaScore {
+  if (external === null) return { ...computed, source: 'computed' }
+  if (computed.value === null) {
+    return { value: external, level: levelOf(external), missing: [], source: 'external' }
+  }
+  if (Math.abs(computed.value - external) > tolerance) {
+    cautions.push(
+      `${name}：取り込んだ値（${external}）と、入力された内訳から計算した値（${computed.value}）が一致しません。` +
+        `表示は計算値を使用しています。転記や単位（CRPは mg/dL、VASは 0〜10cm）をご確認ください。`,
+    )
+  }
+  return { ...computed, source: 'computed' }
+}
+
 export function assessRa(input: RaInput): RaAssessment {
-  const esrScore = das28esr(input)
-  const crpScore = das28crp(input)
-  const sdaiScore = sdai(input)
-  const cdaiScore = cdai(input)
+  const cautions: string[] = []
+  const ext = input.external ?? { sdai: null, cdai: null, das28crp: null, das28esr: null, source: '' }
+
+  const esrScore = reconcile(das28esr(input), ext.das28esr, das28esrLevel, 0.15, 'DAS28-ESR', cautions)
+  const crpScore = reconcile(das28crp(input), ext.das28crp, das28crpLevel, 0.15, 'DAS28-CRP', cautions)
+  const sdaiScore = reconcile(sdai(input), ext.sdai, sdaiLevel, 0.5, 'SDAI', cautions)
+  const cdaiScore = reconcile(cdai(input), ext.cdai, cdaiLevel, 0.5, 'CDAI', cautions)
   const boolRem = booleanRemission(input)
   const cls = classification2010(input)
 
@@ -290,7 +321,12 @@ export function assessRa(input: RaInput): RaAssessment {
     t2tComment.push('疾患活動性スコアの算出に必要な項目が不足しています。圧痛・腫脹関節数、患者／医師の全般評価、CRPを入力してください。')
   }
 
-  const cautions: string[] = []
+  if (primary.score.source === 'external') {
+    t2tComment.push(
+      `この ${primary.name} は${ext.source || '外部システム'}から取り込んだ値です（本システムでは再計算していません）。`,
+    )
+  }
+
   const cm = input.comorbidity
   if (cm.interstitialLungDisease) {
     cautions.push('間質性肺疾患があります。MTXの適否、生物学的製剤の選択（TNF阻害薬・アバタセプトなど）、呼吸器内科との連携を検討してください。')

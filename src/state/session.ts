@@ -77,6 +77,7 @@ export function createSession(disease: DiseaseKey = 'osteoporosis'): Session {
       largeJointsInvolved: null,
       smallJointsInvolved: null,
       haq: null,
+      external: { sdai: null, cdai: null, das28crp: null, das28esr: null, source: '' },
       currentTherapy: [],
       comorbidity: {
         interstitialLungDisease: false,
@@ -154,6 +155,7 @@ export function loadDraft(): Session | null {
         ...base.ra,
         ...parsed.ra,
         comorbidity: { ...base.ra.comorbidity, ...parsed.ra?.comorbidity },
+        external: { ...base.ra.external, ...parsed.ra?.external },
       },
       knee: { ...base.knee, ...parsed.knee },
       locomo: { ...base.locomo, ...parsed.locomo },

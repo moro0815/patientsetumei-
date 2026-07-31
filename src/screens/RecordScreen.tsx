@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@/state/store'
 import { Badge, Banner, CopyButton, Section } from '@/components/ui'
-import { buildKarte } from '@/logic/karte'
+import { buildKarte, buildPrescriptionText, buildQuickSummary, buildValuesLine } from '@/logic/karte'
 import { FEE_MASTER_VERIFIED_AT } from '@/data/fees'
 import { citeLabel } from '@/data/sources'
 
@@ -16,10 +16,10 @@ import { citeLabel } from '@/data/sources'
 export function RecordScreen() {
   const { session, go, persistDraft, draftSaved, reset } = useStore()
   const karte = useMemo(() => buildKarte(session), [session])
-  const [tab, setTab] = useState<'full' | 'soap'>('full')
+  const [tab, setTab] = useState<'full' | 'soap' | 'quick'>('full')
   const [checked, setChecked] = useState<string[]>([])
 
-  const text = tab === 'full' ? karte.text : karte.soap
+  const text = tab === 'full' ? karte.text : tab === 'soap' ? karte.soap : buildQuickSummary(session)
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
@@ -65,7 +65,14 @@ export function RecordScreen() {
                   className={`rounded px-3 py-1.5 text-sm font-bold ${tab === 'soap' ? 'bg-white text-brand-700 shadow' : 'text-ink-soft'}`}
                   onClick={() => setTab('soap')}
                 >
-                  SOAP（簡潔）
+                  SOAP
+                </button>
+                <button
+                  type="button"
+                  className={`rounded px-3 py-1.5 text-sm font-bold ${tab === 'quick' ? 'bg-white text-brand-700 shadow' : 'text-ink-soft'}`}
+                  onClick={() => setTab('quick')}
+                >
+                  1〜2行（経過欄用）
                 </button>
               </div>
               <CopyButton text={text} />
@@ -80,6 +87,38 @@ export function RecordScreen() {
           <p className="mt-2 text-xs text-ink-mute">
             ※コピー後、電子カルテ側で追記・修正してお使いください。患者さんの訴え（S）は手入力が必要です。
           </p>
+        </Section>
+
+        <Section
+          title="部分コピー"
+          subtitle="必要な部分だけを取り出して、電子カルテの該当欄に貼り付けられます"
+        >
+          <div className="space-y-3">
+            {[
+              { label: '検査値の1行まとめ', text: buildValuesLine(session), hint: '経過表・サマリ用' },
+              { label: '運動処方', text: buildPrescriptionText(session), hint: 'リハビリ指示・スタッフへの申し送り用' },
+              {
+                label: '説明した内容のみ',
+                text: extractSection(karte.text, '■ 説明した内容'),
+                hint: '指導内容の記載欄用',
+              },
+            ]
+              .filter((row) => row.text.trim().length > 0)
+              .map((row) => (
+                <div key={row.label} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-ink">{row.label}</p>
+                      <p className="text-xs text-ink-mute">{row.hint}</p>
+                    </div>
+                    <CopyButton size="sm" text={row.text} />
+                  </div>
+                  <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-lg bg-white p-2 font-mono text-xs leading-relaxed text-ink-soft">
+{row.text}
+                  </pre>
+                </div>
+              ))}
+          </div>
         </Section>
 
         {karte.followUp.length > 0 && (
@@ -215,4 +254,15 @@ export function RecordScreen() {
       </div>
     </div>
   )
+}
+
+/** 生成した記録テキストから、指定した見出しのブロックだけを取り出す */
+function extractSection(text: string, heading: string): string {
+  const lines = text.split('\n')
+  const start = lines.findIndex((l) => l.startsWith(heading))
+  if (start === -1) return ''
+  const rest = lines.slice(start + 1)
+  const endRel = rest.findIndex((l) => l.startsWith('■'))
+  const body = endRel === -1 ? rest : rest.slice(0, endRel)
+  return [lines[start], ...body].join('\n').trim()
 }

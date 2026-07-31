@@ -213,3 +213,50 @@ describe('総合評価と T2T', () => {
     expect(a.cautions.join()).toContain('骨破壊')
   })
 })
+
+describe('問診システムから取り込んだスコアの扱い', () => {
+  const ext = (over: Partial<RaInput['external']>) => ({
+    sdai: null, cdai: null, das28crp: null, das28esr: null, source: '問診システム', ...over,
+  })
+
+  it('内訳が無ければ取り込んだ SDAI をそのまま使う', () => {
+    const a = assessRa(input({ external: ext({ sdai: 20.2 }) }))
+    expect(a.sdai.value).toBe(20.2)
+    expect(a.sdai.level).toBe('moderate')
+    expect(a.sdai.source).toBe('external')
+    expect(a.primary.name).toBe('SDAI')
+  })
+
+  it('内訳が揃っていれば計算値を優先する', () => {
+    const a = assessRa({ ...CASE, external: ext({ sdai: 20.2 }) })
+    expect(a.sdai.value).toBe(20)
+    expect(a.sdai.source).toBe('computed')
+  })
+
+  it('計算値と取り込み値が食い違えば警告を出す', () => {
+    const a = assessRa({ ...CASE, external: ext({ sdai: 30 }) })
+    expect(a.cautions.join()).toContain('一致しません')
+  })
+
+  it('誤差の範囲内なら警告を出さない', () => {
+    const a = assessRa({ ...CASE, external: ext({ sdai: 20.2 }) })
+    expect(a.cautions.join()).not.toContain('一致しません')
+  })
+
+  it('取り込み値を使った場合はその旨をコメントに残す', () => {
+    const a = assessRa(input({ external: ext({ sdai: 20.2 }) }))
+    expect(a.t2tComment.join()).toContain('問診システム')
+  })
+
+  it('DAS28-CRP の取り込みにも対応する', () => {
+    const a = assessRa(input({ external: ext({ das28crp: 4.45 }) }))
+    expect(a.das28crp.value).toBe(4.45)
+    expect(a.das28crp.level).toBe('high')
+  })
+
+  it('external が未設定でも従来どおり動く', () => {
+    const a = assessRa(CASE)
+    expect(a.sdai.value).toBe(20)
+    expect(a.cautions.join()).not.toContain('一致しません')
+  })
+})

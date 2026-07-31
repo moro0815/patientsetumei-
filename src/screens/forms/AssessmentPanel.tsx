@@ -167,13 +167,16 @@ function RaAssessment() {
                 </td>
                 <td className="py-2">
                   {r.s.value !== null ? (
-                    <Badge
-                      tone={
-                        r.s.level === 'remission' ? 'good' : r.s.level === 'low' ? 'info' : r.s.level === 'moderate' ? 'warn' : 'danger'
-                      }
-                    >
-                      {ACTIVITY_LABEL[r.s.level]}
-                    </Badge>
+                    <span className="flex flex-wrap items-center gap-1">
+                      <Badge
+                        tone={
+                          r.s.level === 'remission' ? 'good' : r.s.level === 'low' ? 'info' : r.s.level === 'moderate' ? 'warn' : 'danger'
+                        }
+                      >
+                        {ACTIVITY_LABEL[r.s.level]}
+                      </Badge>
+                      {r.s.source === 'external' && <Badge>取込値</Badge>}
+                    </span>
                   ) : (
                     <span className="text-xs text-ink-mute">{r.s.missing.join('・')}が未入力</span>
                   )}

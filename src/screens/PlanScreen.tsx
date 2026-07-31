@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@/state/store'
-import { Badge, Banner, Chip, Cite, DoctorNote, Field, Section, TextInput } from '@/components/ui'
+import { Badge, Banner, Chip, Cite, CopyButton, DoctorNote, Field, Section, TextInput } from '@/components/ui'
 import { drugsForDisease } from '@/data/drugs'
 import { CATEGORY_LABEL, exercisesForDisease, getExercise, RECOMMENDED_SETS } from '@/data/exercises'
 import { LIFESTYLE_ITEMS } from '@/data/nutrition'
 import { labsForDisease } from '@/data/fees'
-import { suggestNextVisit } from '@/logic/karte'
+import { buildPrescriptionText, suggestNextVisit } from '@/logic/karte'
 import { citeLabel } from '@/data/sources'
 import { ExerciseFigure } from '@/components/figures/exercise'
 import type { ExercisePathway, ExercisePrescriptionItem } from '@/types'
@@ -246,7 +246,10 @@ export function PlanScreen() {
 
           {plan.prescription.length > 0 && (
             <div className="mt-5 space-y-3">
-              <p className="label">処方量の調整（患者さんの状態に合わせて変更してください）</p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="label !mb-0">処方量の調整（患者さんの状態に合わせて変更してください）</p>
+                <CopyButton size="sm" label="運動処方をコピー" text={buildPrescriptionText(session)} />
+              </div>
               {plan.prescription.map((p) => {
                 const e = getExercise(p.exerciseId)
                 if (!e) return null

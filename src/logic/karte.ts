@@ -136,6 +136,9 @@ export function buildKarte(session: Session): KarteOutput {
       lines.push(`疾患活動性：${scores.join('、')}`)
       soapO.push(`疾患活動性：${scores.join('、')}`)
     }
+    if (a.primary.score.source === 'external' && r.external?.source) {
+      lines.push(`　※ ${a.primary.name} は「${r.external.source}」から取り込んだ値です`)
+    }
     if (a.booleanRemission.met !== null) {
       lines.push(`ACR/EULAR Boolean寛解基準：${a.booleanRemission.met ? '達成' : '未達成'}`)
     }
@@ -291,6 +294,163 @@ export function buildKarte(session: Session): KarteOutput {
     labCandidates: suggestLabs(session),
     followUp,
   }
+}
+
+// ---------------------------------------------------------------- 短い貼り付け用テキスト
+
+/**
+ * 1〜2行の要約。
+ * 電子カルテの経過欄に手早く貼るための最小限の形式。
+ * 詳細版と使い分けられるように、記録画面と判定パネルの両方から呼べるようにしている。
+ */
+export function buildQuickSummary(session: Session): string {
+  const { disease, patient, plan } = session
+  const parts: string[] = []
+
+  if (disease === 'osteoporosis') {
+    const a = assessOsteoporosis(session.osteo, patient)
+    const bits = [
+      a.adoptedYam !== null
+        ? `BMD ${a.adoptedYam}%(T${fmtT(a.adoptedTscore)}/${a.adoptedSite === 'lumbar' ? 'L' : 'FN'})`
+        : 'BMD未測定',
+      `Dx:${DIAGNOSIS_SHORT[a.diagnosis]}`,
+      `骨折リスク:${RISK_TIER_JP[a.riskTier]}`,
+    ]
+    if (session.osteo.fractures.length > 0) {
+      bits.push(`既存骨折:${session.osteo.fractures.map((f) => FRACTURE_JP[f.site]).join('+')}`)
+    }
+    if (a.heightLossCm !== null && a.heightLossCm >= 2) bits.push(`身長-${a.heightLossCm}cm`)
+    parts.push(`[骨粗鬆症] ${bits.join(' / ')}`)
+  } else if (disease === 'ra') {
+    const a = assessRa(session.ra)
+    const r = session.ra
+    const bits: string[] = []
+    if (a.primary.score.value !== null) {
+      bits.push(
+        `${a.primary.name} ${a.primary.score.value}(${ACTIVITY_LABEL[a.primary.score.level]})` +
+          (a.primary.score.source === 'external' ? '※取込値' : ''),
+      )
+    }
+    bits.push(`TJC${r.tenderJoints28 ?? '-'}/SJC${r.swollenJoints28 ?? '-'}`)
+    if (r.patientGlobalVas !== null || r.physicianGlobalVas !== null) {
+      bits.push(`VAS pt${r.patientGlobalVas ?? '-'}/dr${r.physicianGlobalVas ?? '-'}`)
+    }
+    if (r.crp !== null) bits.push(`CRP ${r.crp}`)
+    if (r.esr !== null) bits.push(`ESR ${r.esr}`)
+    if (r.erosion) bits.push('骨びらんあり')
+    parts.push(`[RA] ${bits.join(' / ')}`)
+  } else {
+    const loco = assessLocomo(session.locomo)
+    const bmi = calcBmi(patient.heightCm, patient.weightKg)
+    const bits: string[] = []
+    if (session.knee.klGrade !== null) bits.push(`K-L ${session.knee.klGrade}`)
+    if (session.knee.side) {
+      bits.push(session.knee.side === 'both' ? '両側' : session.knee.side === 'left' ? '左' : '右')
+    }
+    if (session.knee.painNrs !== null) bits.push(`NRS ${session.knee.painNrs}/10`)
+    if (loco.stage !== null) bits.push(loco.stage === 0 ? 'ロコモ該当なし' : `ロコモ度${loco.stage}`)
+    if (bmi !== null) bits.push(`BMI ${bmi}`)
+    parts.push(`[膝OA/ロコモ] ${bits.join(' / ')}`)
+  }
+
+  const plan2: string[] = []
+  if (plan.drugIds.length > 0) {
+    plan2.push(`Rp:${plan.drugIds.map((id) => getDrug(id)?.generic ?? id).join('+')}`)
+  }
+  if (plan.exercisePathway.length > 0) {
+    plan2.push(plan.exercisePathway.map((p) => EXERCISE_PATHWAY_SHORT[p] ?? p).join('+'))
+  }
+  if (plan.prescription.length > 0) plan2.push(`運動処方${plan.prescription.length}種(文書交付)`)
+  if (plan.nextVisit) plan2.push(`次回:${plan.nextVisit}`)
+  if (plan2.length > 0) parts.push(`→ ${plan2.join(' / ')}`)
+
+  parts.push('疾患説明パンフレット交付・口頭説明済')
+  return parts.join('\n')
+}
+
+/** 検査値だけを1行にまとめる（他院への情報提供やサマリ作成に使う） */
+export function buildValuesLine(session: Session): string {
+  const { disease } = session
+  if (disease === 'ra') {
+    const r = session.ra
+    const a = assessRa(r)
+    return [
+      `TJC28 ${r.tenderJoints28 ?? '-'}`,
+      `SJC28 ${r.swollenJoints28 ?? '-'}`,
+      `PtGA ${r.patientGlobalVas ?? '-'}cm`,
+      `PhGA ${r.physicianGlobalVas ?? '-'}cm`,
+      `CRP ${r.crp ?? '-'}mg/dL`,
+      `ESR ${r.esr ?? '-'}mm/h`,
+      a.sdai.value !== null ? `SDAI ${a.sdai.value}` : null,
+      a.cdai.value !== null ? `CDAI ${a.cdai.value}` : null,
+      a.das28crp.value !== null ? `DAS28-CRP ${a.das28crp.value}` : null,
+      a.das28esr.value !== null ? `DAS28-ESR ${a.das28esr.value}` : null,
+      r.rf !== null ? `RF ${r.rf}` : null,
+      r.accp !== null ? `抗CCP ${r.accp}` : null,
+      r.mmp3 !== null ? `MMP-3 ${r.mmp3}` : null,
+      r.haq !== null ? `HAQ ${r.haq}` : null,
+    ]
+      .filter(Boolean)
+      .join(' / ')
+  }
+  if (disease === 'osteoporosis') {
+    const a = assessOsteoporosis(session.osteo, session.patient)
+    const b = session.osteo.bmd
+    const l = session.osteo.labs
+    return [
+      `DXA(${b.measuredAt}) 腰椎 ${fmtVal(b.lumbar, b.unit)} / 大腿骨 ${fmtVal(b.femur, b.unit)}`,
+      a.adoptedYam !== null ? `採用 YAM ${a.adoptedYam}% (T${fmtT(a.adoptedTscore)})` : null,
+      l.calcium !== null ? `Ca ${l.calcium}` : null,
+      l.vitD25 !== null ? `25(OH)D ${l.vitD25}` : null,
+      l.tracp5b !== null ? `TRACP-5b ${l.tracp5b}` : null,
+      l.p1np !== null ? `P1NP ${l.p1np}` : null,
+      l.egfr !== null ? `eGFR ${l.egfr}` : null,
+      session.osteo.risk.fraxMajorPercent !== null ? `FRAX MOF ${session.osteo.risk.fraxMajorPercent}%` : null,
+    ]
+      .filter(Boolean)
+      .join(' / ')
+  }
+  const loco = assessLocomo(session.locomo)
+  return [
+    session.knee.klGrade !== null ? `K-L ${session.knee.klGrade}` : null,
+    session.knee.painNrs !== null ? `NRS ${session.knee.painNrs}/10` : null,
+    `立ち上がり 片脚${fmtStandUp(session.locomo.standUpOneLegCm)}/両脚${fmtStandUp(session.locomo.standUpBothLegCm)}`,
+    session.locomo.twoStepValue !== null ? `2ステップ値 ${session.locomo.twoStepValue}` : null,
+    session.locomo.locomo25 !== null ? `ロコモ25 ${session.locomo.locomo25}点` : null,
+    loco.stage !== null ? (loco.stage === 0 ? 'ロコモ該当なし' : `ロコモ度${loco.stage}`) : null,
+  ]
+    .filter(Boolean)
+    .join(' / ')
+}
+
+/** 運動処方だけを取り出す（リハビリ指示箋やスタッフへの申し送りに使う） */
+export function buildPrescriptionText(session: Session): string {
+  if (session.plan.prescription.length === 0) return ''
+  const lines = ['【運動処方】']
+  session.plan.prescription.forEach((p, i) => {
+    const e = getExercise(p.exerciseId)
+    if (!e) return
+    lines.push(`${i + 1}. ${e.name}　${p.reps}／${p.sets}／${p.frequency}${p.memo ? `　※${p.memo}` : ''}`)
+  })
+  if (session.plan.exercisePathway.length > 0) {
+    lines.push(`導入：${session.plan.exercisePathway.map((p) => EXERCISE_PATHWAY_LABEL[p] ?? p).join('、')}`)
+  }
+  return lines.join('\n')
+}
+
+const EXERCISE_PATHWAY_SHORT: Record<string, string> = {
+  undoukiRehab: '運動器リハ',
+  clinicClass: '運動教室',
+  homeExercise: '自主トレ',
+  homeVisitRehab: '訪問リハ',
+  referral: '他院紹介',
+}
+
+const DIAGNOSIS_SHORT: Record<string, string> = {
+  osteoporosis: '骨粗鬆症',
+  lowBoneMass: '骨量減少',
+  normal: '正常範囲',
+  insufficientData: '判定不能',
 }
 
 // ---------------------------------------------------------------- 算定候補
