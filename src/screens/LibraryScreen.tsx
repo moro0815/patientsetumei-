@@ -40,6 +40,45 @@ import {
   FallPreventionMapFigure,
   NutrientRoleFigure,
 } from '@/components/figures/lifestyle'
+import {
+  ArmDermatomeFigure,
+  CervicalForamenFigure,
+  DiscHerniaFigure,
+  KyphosisImpactFigure,
+  LegDermatomeFigure,
+  NeurogenicClaudicationFigure,
+  SpinalCanalCrossFigure,
+  VertebralFractureFigure,
+} from '@/components/figures/spine'
+import {
+  FrozenShoulderFigure,
+  FrozenShoulderPhaseFigure,
+  ShoulderRomFigure,
+  TennisElbowFigure,
+  TennisElbowLoadFigure,
+  TriggerFingerFigure,
+  TriggerFingerStageFigure,
+} from '@/components/figures/upperlimb'
+import {
+  AcuteCareFigure,
+  AnkleLigamentFigure,
+  FirstStepPainFigure,
+  HipLoadFigure,
+  HipOaFigure,
+  MuscleStrainFigure,
+  OveruseFactorsFigure,
+  PlantarFasciaFigure,
+  ReturnToPlayFigure,
+  ShinSplintsFigure,
+  SprainGradeFigure,
+} from '@/components/figures/lowerlimb'
+import {
+  BodyMapFigure,
+  PainScaleFigure,
+  RecoveryTimelineFigure,
+  TreatmentLadderFigure,
+} from '@/components/figures/generic'
+import { CONDITIONS } from '@/data/conditions'
 
 type Tab = 'sources' | 'figures' | 'drugs' | 'exercises' | 'nutrition'
 
@@ -267,6 +306,67 @@ function FigureGallery() {
       ],
     },
     {
+      label: '腰・背中',
+      items: [
+        { name: '脊柱管の狭窄（輪切り）', node: <SpinalCanalCrossFigure severity={2} /> },
+        { name: '前かがみで楽になるしくみ', node: <NeurogenicClaudicationFigure walkableMeters={200} /> },
+        { name: '椎間板ヘルニア', node: <DiscHerniaFigure side="right" size={2} /> },
+        { name: '下肢の皮膚分節（L4/L5/S1）', node: <LegDermatomeFigure level="L5" /> },
+        { name: '脊椎圧迫骨折（くさび形変形）', node: <VertebralFractureFigure collapsed={2} /> },
+        { name: '円背が体に与える影響', node: <KyphosisImpactFigure /> },
+      ],
+    },
+    {
+      label: '首・肩・腕・手',
+      items: [
+        { name: '頚椎の椎間孔と神経根', node: <CervicalForamenFigure side="right" /> },
+        { name: '上肢の皮膚分節（C5〜C8）', node: <ArmDermatomeFigure level="C6" /> },
+        { name: '肩関節包の拘縮', node: <FrozenShoulderFigure tight /> },
+        { name: '肩関節周囲炎の3つの時期', node: <FrozenShoulderPhaseFigure phase="frozen" /> },
+        { name: '肩の可動域', node: <ShoulderRomFigure flexion={100} abduction={90} externalRotation={15} /> },
+        { name: 'テニス肘（外側上顆）', node: <TennisElbowFigure /> },
+        { name: 'テニス肘で痛む動作', node: <TennisElbowLoadFigure /> },
+        { name: 'ばね指（腱と腱鞘）', node: <TriggerFingerFigure stage={2} /> },
+        { name: 'ばね指の進み具合', node: <TriggerFingerStageFigure stage={2} /> },
+      ],
+    },
+    {
+      label: '股・足・スポーツ',
+      items: [
+        { name: '変形性股関節症', node: <HipOaFigure grade={3} dysplasia /> },
+        { name: '股関節にかかる力', node: <HipLoadFigure weightKg={60} /> },
+        { name: '足底腱膜炎', node: <PlantarFasciaFigure heelSpur /> },
+        { name: '朝の一歩目が痛いしくみ', node: <FirstStepPainFigure /> },
+        { name: '足関節外側の靱帯', node: <AnkleLigamentFigure injured="atfl" /> },
+        { name: 'ねんざの重さと復帰の目安', node: <SprainGradeFigure grade={2} /> },
+        { name: '肉離れの重症度', node: <MuscleStrainFigure grade={2} /> },
+        { name: 'シンスプリントと疲労骨折の見分け', node: <ShinSplintsFigure /> },
+        { name: 'シンスプリントのきっかけ', node: <OveruseFactorsFigure /> },
+        { name: 'けが直後の対応', node: <AcuteCareFigure /> },
+        { name: 'スポーツ復帰の段階', node: <ReturnToPlayFigure current={3} /> },
+      ],
+    },
+    {
+      label: '疾患によらず使う図',
+      items: [
+        { name: '痛みの強さ（NRS）', node: <PainScaleFigure value={6} /> },
+        { name: '痛みのある場所', node: <BodyMapFigure spots={['lowBack', 'kneeR']} caption="いま痛みが出ている場所" /> },
+        {
+          name: '治療の階段',
+          node: (
+            <TreatmentLadderFigure
+              steps={['運動療法と生活の工夫', 'お薬', '注射', '手術']}
+              current={2}
+            />
+          ),
+        },
+        {
+          name: '回復の見通し（時間軸）',
+          node: <RecoveryTimelineFigure phases={CONDITIONS[0].course.phases} currentIndex={1} />,
+        },
+      ],
+    },
+    {
       label: '栄養・生活',
       items: [
         { name: '1日にとりたい食品', node: <DailyFoodFigure /> },
@@ -280,8 +380,16 @@ function FigureGallery() {
   return (
     <div className="space-y-8">
       <Banner tone="info" title="図表はすべて手描きのSVGです">
-        外部の画像・フォントに依存しないため、インターネットに接続していない院内PCでも、A4印刷でも、拡大しても劣化しません。
-        患者さんの数値を入れると図に反映されるものもあります（下記は見本の数値です）。
+        <p>
+          外部の画像・フォントに依存しないため、インターネットに接続していない院内PCでも、A4印刷でも、拡大しても劣化しません。
+          患者さんの数値を入れると図に反映されるものもあります（下記は見本の数値です）。
+        </p>
+        <p className="mt-2">
+          収録している図は <strong>{groups.reduce((n, g) => n + g.items.length, 0)}点</strong>（運動のイラストは別に
+          {' '}
+          <strong>36点</strong>あります）。
+          差し替えたい図があれば、<code>src/components/figures/</code> の該当ファイルを編集してください。
+        </p>
       </Banner>
       {groups.map((g) => (
         <Section key={g.label} title={g.label}>
