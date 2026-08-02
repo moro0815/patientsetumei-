@@ -115,7 +115,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: 'かかと上げ（カーフレイズ）',
     shortName: 'かかと上げ',
     category: 'weightBearing',
-    disease: ['osteoporosis', 'ankleSprain'],
+    disease: ['osteoporosis', 'ankleSprain', 'shinSplints'],
     level: 'standing-support',
     steps: [
       'テーブルや椅子の背に軽く手をおいて立ちます。',
@@ -250,7 +250,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '横向き脚上げ（お尻の横の筋トレ）',
     shortName: '横向き脚上げ',
     category: 'strength',
-    disease: ['kneeOA', 'osteoporosis', 'hipOA'],
+    disease: ['kneeOA', 'osteoporosis', 'hipOA', 'shinSplints'],
     level: 'sitting',
     steps: [
       '横向きに寝て、下の脚を軽く曲げます。',

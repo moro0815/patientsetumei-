@@ -557,3 +557,146 @@ export function ReturnToPlayFigure({ current }: { current?: number | null }) {
     </Figure>
   )
 }
+
+// ================================================================ シンスプリント
+
+/**
+ * シンスプリント（脛骨過労性骨膜炎）。
+ *
+ * この疾患の説明でいちばん大事なのは「どこが痛いか」で、
+ * すねの内側の下1/3に**広い範囲**の痛みが出るのがシンスプリント、
+ * **一点**を押すと激痛なら疲労骨折を疑う、という区別を図で示す。
+ */
+export function ShinSplintsFigure({ compareStressFracture = true }: { compareStressFracture?: boolean }) {
+  const w = compareStressFracture ? 620 : 320
+  return (
+    <Figure
+      viewBox={`0 0 ${w} 372`}
+      title="シンスプリント（すねの内側の痛み）"
+      desc="すねの骨の内側のふちに沿って、広い範囲に痛みが出ます"
+    >
+      <ArrowDefs id="ss-arrow" color={PALETTE.warn} />
+      <FigCaption x={155} y={26} size={15} color={PALETTE.warn}>
+        シンスプリント
+      </FigCaption>
+      {compareStressFracture && (
+        <FigCaption x={465} y={26} size={15} color={PALETTE.inkSoft}>
+          疲労骨折（見分けが大事）
+        </FigCaption>
+      )}
+
+      <g transform="translate(45,40)">
+        <ShinBone spread />
+      </g>
+      {compareStressFracture && (
+        <g transform="translate(355,40)">
+          <ShinBone spread={false} />
+        </g>
+      )}
+
+      <text x={w / 2} y={352} textAnchor="middle" fontSize={12.5} fontWeight={700} fill={PALETTE.ink}>
+        {compareStressFracture
+          ? '「広い範囲がじんわり痛い」のがシンスプリント、「一点が激しく痛い」なら疲労骨折を疑います'
+          : 'すねの内側のふちに沿って、広い範囲に痛みが出ます'}
+      </text>
+    </Figure>
+  )
+}
+
+/**
+ * すね（脛骨）を前から見た図。
+ * spread=true で痛みの範囲が広い＝シンスプリント、false で一点＝疲労骨折。
+ * 注釈は骨の下にまとめて置き、ラベル同士が重ならないようにしている。
+ */
+function ShinBone({ spread }: { spread: boolean }) {
+  return (
+    <g>
+      {/* ひざ */}
+      <ellipse cx={110} cy={20} rx={32} ry={16} fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth={2.4} />
+      {/* 脛骨 */}
+      <path d="M88 26 L86 200 L128 200 L126 26 Z" fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth={2.6} />
+      {/* 腓骨 */}
+      <path d="M136 36 L140 196" stroke={PALETTE.boneEdge} strokeWidth={11} strokeLinecap="round" />
+      <path d="M136 36 L140 196" stroke={PALETTE.bone} strokeWidth={7} strokeLinecap="round" />
+      {/* 足首 */}
+      <ellipse cx={104} cy={210} rx={28} ry={12} fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth={2.2} />
+      <text x={110} y={236} textAnchor="middle" fontSize={11.5} fill={PALETTE.inkMute}>
+        すねの骨（脛骨）
+      </text>
+
+      {spread ? (
+        <>
+          {/* 内側のふちに沿って、下1/3に広く */}
+          <rect x={78} y={116} width={16} height={78} rx={8} fill={PALETTE.warn} opacity={0.3} />
+          <rect x={74} y={112} width={24} height={86} rx={12} fill="none" stroke={PALETTE.warn} strokeWidth={3} strokeDasharray="7 4" />
+          {/* 矢印は骨の右側から。左側は文字を置かないので重ならない */}
+          <line x1={188} y1={132} x2={104} y2={150} stroke={PALETTE.warn} strokeWidth={2.5} markerEnd="url(#ss-arrow)" />
+          <text x={192} y={128} fontSize={12} fontWeight={800} fill={PALETTE.warn}>
+            すねの内側の
+          </text>
+          <text x={192} y={144} fontSize={12} fontWeight={800} fill={PALETTE.warn}>
+            ふちに沿って
+          </text>
+          {/* 注釈は骨の下にまとめる */}
+          <text x={110} y={262} textAnchor="middle" fontSize={12.5} fontWeight={800} fill={PALETTE.warn}>
+            5cm以上にわたって
+          </text>
+          <text x={110} y={280} textAnchor="middle" fontSize={12.5} fontWeight={800} fill={PALETTE.warn}>
+            じんわり痛い
+          </text>
+        </>
+      ) : (
+        <>
+          {/* 一点 */}
+          <circle cx={100} cy={150} r={12} fill={PALETTE.warn} opacity={0.5} />
+          <circle cx={100} cy={150} r={12} fill="none" stroke={PALETTE.warn} strokeWidth={3} />
+          <line x1={186} y1={132} x2={114} y2={146} stroke={PALETTE.warn} strokeWidth={2.5} markerEnd="url(#ss-arrow)" />
+          <text x={190} y={136} fontSize={12} fontWeight={800} fill={PALETTE.warn}>
+            一点だけ
+          </text>
+          <text x={110} y={262} textAnchor="middle" fontSize={12.5} fontWeight={800} fill={PALETTE.warn}>
+            一点が激しく痛い
+          </text>
+          <text x={110} y={280} textAnchor="middle" fontSize={11.5} fill={PALETTE.inkSoft}>
+            → 画像で確認します
+          </text>
+        </>
+      )}
+    </g>
+  )
+}
+
+/** 発症につながる負荷の増やしすぎ（練習量・路面・シューズ） */
+export function OveruseFactorsFigure() {
+  const items = [
+    { icon: '📈', t: '練習量が急に増えた', d: '距離・回数・強度を\n一度に上げた' },
+    { icon: '🛣️', t: '硬い路面', d: 'アスファルト・\n体育館の床' },
+    { icon: '👟', t: 'すり減った靴', d: 'クッションが\n効いていない' },
+    { icon: '🦶', t: '足のかたち', d: '扁平足・\n回内足' },
+  ]
+  return (
+    <Figure viewBox="0 0 620 230" title="シンスプリントが起きるきっかけ" desc="練習量・路面・靴・足のかたちが重なって起こります">
+      <FigCaption x={310} y={26} size={16}>
+        こんなときに起こります
+      </FigCaption>
+      {items.map((it, i) => {
+        const x = 22 + i * 148
+        return (
+          <g key={i}>
+            <rect x={x} y={46} width={136} height={124} rx={12} fill={PALETTE.bg} stroke={PALETTE.line} strokeWidth={1.6} />
+            <text x={x + 68} y={86} textAnchor="middle" fontSize={28}>
+              {it.icon}
+            </text>
+            <text x={x + 68} y={112} textAnchor="middle" fontSize={12.5} fontWeight={800} fill={PALETTE.ink}>
+              {it.t}
+            </text>
+            <MultiText x={x + 68} y={130} anchor="middle" lines={it.d.split('\n')} size={11} color={PALETTE.inkSoft} weight={600} />
+          </g>
+        )
+      })}
+      <text x={310} y={198} textAnchor="middle" fontSize={12.5} fontWeight={700} fill={PALETTE.good}>
+        練習量を増やすときは「1週間で1割まで」が目安です
+      </text>
+    </Figure>
+  )
+}

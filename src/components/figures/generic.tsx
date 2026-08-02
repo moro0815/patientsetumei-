@@ -322,6 +322,7 @@ export type BodySpot =
   | 'ankleL' | 'ankleR'
   | 'heelL' | 'heelR'
   | 'thighBackL' | 'thighBackR'
+  | 'shinL' | 'shinR'
 
 const SPOT_POS: Record<BodySpot, [number, number]> = {
   neck: [100, 52],
@@ -338,6 +339,8 @@ const SPOT_POS: Record<BodySpot, [number, number]> = {
   thighBackL: [118, 222],
   kneeR: [84, 268],
   kneeL: [116, 268],
+  shinR: [85, 306],
+  shinL: [115, 306],
   ankleR: [86, 340],
   ankleL: [114, 340],
   heelR: [86, 352],

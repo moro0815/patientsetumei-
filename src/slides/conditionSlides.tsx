@@ -31,6 +31,7 @@ const SPOT_MAP: Record<ConditionKey, (side: string | null) => BodySpot[]> = {
   plantarFasciitis: (s) => (s === 'both' ? ['heelL', 'heelR'] : s === 'left' ? ['heelL'] : ['heelR']),
   ankleSprain: (s) => [s === 'left' ? 'ankleL' : 'ankleR'],
   muscleStrain: (s) => [s === 'left' ? 'thighBackL' : 'thighBackR'],
+  shinSplints: (s) => (s === 'both' ? ['shinL', 'shinR'] : s === 'left' ? ['shinL'] : ['shinR']),
 }
 
 export const buildConditionSlides: SlideBuilder = (session) => {

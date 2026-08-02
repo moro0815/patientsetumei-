@@ -34,6 +34,7 @@ export type ConditionKey =
   | 'vertebralFracture' // 脊椎圧迫骨折
   | 'ankleSprain' // 足関節外側側副靱帯損傷
   | 'muscleStrain' // 肉離れ（筋挫傷）
+  | 'shinSplints' // シンスプリント（脛骨過労性骨膜炎）
 
 export type DiseaseKey = 'osteoporosis' | 'ra' | 'kneeOA' | ConditionKey
 

@@ -2,7 +2,7 @@ import type { ConditionKey, DiseaseKey } from '@/types'
 import type { ConditionDef } from './types'
 import { cervicalRadiculopathy, lumbarDiscHernia, lumbarStenosis, vertebralFracture } from './spine'
 import { frozenShoulder, tennisElbow, triggerFinger } from './upperlimb'
-import { ankleSprain, hipOA, muscleStrain, plantarFasciitis } from './lowerlimb'
+import { ankleSprain, hipOA, muscleStrain, plantarFasciitis, shinSplints } from './lowerlimb'
 
 export type { ConditionDef } from './types'
 export { emptyConditionInput } from './types'
@@ -31,6 +31,7 @@ export const CONDITIONS: ConditionDef[] = [
   ankleSprain,
   // スポーツ・外傷
   muscleStrain,
+  shinSplints,
 ]
 
 const byKey = new Map<string, ConditionDef>(CONDITIONS.map((c) => [c.key, c]))

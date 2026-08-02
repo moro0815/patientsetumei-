@@ -387,7 +387,7 @@ export const EXERCISES_CONDITION: ExerciseItem[] = [
     name: 'ふくらはぎのばし',
     shortName: 'ふくらはぎのばし',
     category: 'stretch',
-    disease: ['plantarFasciitis', 'ankleSprain', 'muscleStrain'],
+    disease: ['plantarFasciitis', 'ankleSprain', 'muscleStrain', 'shinSplints'],
     level: 'standing',
     steps: [
       '壁に両手をつき、片脚を後ろに引きます。',
@@ -407,7 +407,7 @@ export const EXERCISES_CONDITION: ExerciseItem[] = [
     name: 'タオルたぐり寄せ',
     shortName: 'タオルたぐり',
     category: 'strength',
-    disease: ['plantarFasciitis', 'ankleSprain'],
+    disease: ['plantarFasciitis', 'ankleSprain', 'shinSplints'],
     level: 'sitting',
     steps: [
       '椅子に座り、床にタオルを敷いて足を乗せます。',
@@ -580,6 +580,18 @@ export const RECOMMENDED_SETS_CONDITION: Record<string, { label: string; ids: st
       label: '再発を防ぐ（いちばん大事）',
       ids: ['ankle-eversion-band', 'one-leg-stand', 'heel-raise', 'calf-stretch'],
       note: 'バランス訓練と腓骨筋の強化が再受傷を減らします。最低3か月は続けてください。',
+    },
+  ],
+  shinSplints: [
+    {
+      label: '基本セット（柔軟性と足の筋力）',
+      ids: ['calf-stretch', 'towel-gather'],
+      note: 'ふくらはぎの柔軟性と足の内在筋。痛みが強い時期でも行えます。',
+    },
+    {
+      label: '復帰前（再発を防ぐ）',
+      ids: ['calf-stretch', 'towel-gather', 'heel-raise', 'side-leg-raise'],
+      note: '着地の衝撃を分散させる筋力をつけます。走り始める前に導入してください。',
     },
   ],
   muscleStrain: [

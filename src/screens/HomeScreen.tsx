@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@/state/store'
-import { DISEASE_LABEL, DISEASE_SUBLABEL, hasDraft } from '@/state/session'
+import { hasDraft } from '@/state/session'
 import { Banner, TextInput } from '@/components/ui'
-import { CONDITIONS, CONDITION_REGIONS, searchConditions } from '@/data/conditions'
+import { DISEASE_CARDS, DISEASE_REGIONS, searchDiseases } from '@/data/diseaseCatalog'
 import type { DiseaseKey } from '@/types'
 
 /**
@@ -11,31 +11,20 @@ import type { DiseaseKey } from '@/types'
  * 診察室では「今日どの説明をするか」が決まった状態で開くため、
  * 目的の疾患に2秒でたどり着けることを最優先にしている。
  *
- * - 骨粗鬆症・関節リウマチ・膝OA は継続管理の中心なので、大きなカードで最上段に置く。
- * - 症状別疾患は部位ごとにまとめ、患者さんの言い方（「五十肩」「ぎっくり腰」など）でも
- *   検索できるようにする。
+ * - 骨粗鬆症・関節リウマチは「継続して管理していく病気」なので、大きなカードで最上段に置く。
+ * - それ以外はすべて部位から探す。診察室では「膝が痛い」「腰が痛い」から入るため、
+ *   変形性膝関節症も股関節症と同じ「股・膝」に置いている。
+ * - 患者さんの言い方（「五十肩」「ばね指」「ヘルニア」）でも検索できるようにする。
  */
-
-const MAIN_CARDS: { key: DiseaseKey; icon: string; accent: string }[] = [
-  { key: 'osteoporosis', icon: '🦴', accent: 'from-bone-100 to-bone-200 border-bone-400' },
-  { key: 'ra', icon: '🖐️', accent: 'from-pink-50 to-pink-100 border-pink-300' },
-  { key: 'kneeOA', icon: '🦵', accent: 'from-brand-50 to-brand-100 border-brand-300' },
-]
 
 export function HomeScreen() {
   const { reset, setSession, go, clinic, restoreDraft } = useStore()
   const [draftAvailable] = useState(() => hasDraft())
   const [query, setQuery] = useState('')
 
-  const filtered = useMemo(() => searchConditions(query), [query])
   const searching = query.trim().length > 0
-  const mainMatches = useMemo(() => {
-    if (!searching) return MAIN_CARDS
-    const q = query.trim().toLowerCase()
-    return MAIN_CARDS.filter((c) =>
-      [DISEASE_LABEL[c.key], DISEASE_SUBLABEL[c.key]].some((s) => s.toLowerCase().includes(q)),
-    )
-  }, [query, searching])
+  const filtered = useMemo(() => searchDiseases(query), [query])
+  const mainMatches = filtered.filter((c) => c.region === 'main')
 
   const start = (disease: DiseaseKey) => {
     reset(disease)
@@ -80,7 +69,7 @@ export function HomeScreen() {
         </label>
         {searching && (
           <p className="mt-2 text-center text-sm text-ink-mute">
-            {mainMatches.length + filtered.length}件が見つかりました
+            {filtered.length}件が見つかりました
             <button type="button" className="ml-2 font-bold text-brand-600 underline" onClick={() => setQuery('')}>
               クリア
             </button>
@@ -91,9 +80,11 @@ export function HomeScreen() {
       {mainMatches.length > 0 && (
         <section className="mb-8">
           {!searching && (
-            <h2 className="mb-3 text-sm font-bold tracking-wide text-ink-mute">継続してみていく病気</h2>
+            <h2 className="mb-3 text-sm font-bold tracking-wide text-ink-mute">
+              継続してみていく病気（検査値をもとに判定します）
+            </h2>
           )}
-          <div className="grid gap-5 sm:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2">
             {mainMatches.map((c) => (
               <button
                 key={c.key}
@@ -104,8 +95,8 @@ export function HomeScreen() {
                 <span aria-hidden className="text-5xl">
                   {c.icon}
                 </span>
-                <span className="text-2xl font-extrabold text-ink">{DISEASE_LABEL[c.key]}</span>
-                <span className="text-sm leading-relaxed text-ink-soft">{DISEASE_SUBLABEL[c.key]}</span>
+                <span className="text-2xl font-extrabold text-ink">{c.label}</span>
+                <span className="text-sm leading-relaxed text-ink-soft">{c.subLabel}</span>
                 <span className="mt-1 rounded-full bg-white/80 px-4 py-1.5 text-sm font-bold text-brand-700">
                   説明をはじめる →
                 </span>
@@ -121,7 +112,7 @@ export function HomeScreen() {
             症状・部位から選ぶ（外来でよくみる運動器の病気）
           </h2>
         )}
-        {CONDITION_REGIONS.map((region) => {
+        {DISEASE_REGIONS.map((region) => {
           const items = filtered.filter((c) => c.region === region)
           if (items.length === 0) return null
           return (
@@ -192,7 +183,7 @@ export function HomeScreen() {
             </li>
             <li>表示される判定はガイドラインの基準に当てはめた参考結果です。最終判断は必ず医師が行ってください。</li>
             <li>患者情報は既定ではこの端末の外に出ません（「一時保存」を押した場合のみタブを閉じるまで保持）。</li>
-            <li>収録している病気は {MAIN_CARDS.length + CONDITIONS.length} 疾患です。</li>
+            <li>収録している病気は {DISEASE_CARDS.length} 疾患です。</li>
           </ul>
         </Banner>
       </div>

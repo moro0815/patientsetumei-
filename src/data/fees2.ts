@@ -11,6 +11,7 @@ import type { FeeItem, LabOrderItem, MasterMeta } from '@/types'
 const meta: MasterMeta = { verifiedAt: '2026-07-31', needsLocalCheck: true }
 
 const ALL_CONDITIONS = [
+  'shinSplints',
   'lumbarStenosis',
   'lumbarDiscHernia',
   'cervicalRadiculopathy',
@@ -84,7 +85,7 @@ export const FEE_ITEMS_CONDITION: FeeItem[] = [
     unit: '1回（要確認）',
     requirement: '実施部位と所見をカルテに記載します。同一月内の算定回数の制限を確認してください。',
     facilityStandard: '不要',
-    disease: ['frozenShoulder', 'tennisElbow', 'triggerFinger', 'ankleSprain', 'muscleStrain', 'plantarFasciitis'],
+    disease: ['frozenShoulder', 'tennisElbow', 'triggerFinger', 'ankleSprain', 'muscleStrain', 'plantarFasciitis', 'shinSplints'],
     meta,
     sources: ['mhlw-fee-r8'],
   },
@@ -231,6 +232,22 @@ export const LAB_ORDERS_CONDITION: LabOrderItem[] = [
     purpose: '損傷範囲と重症度の正確な評価。完全断裂が疑われる場合、復帰時期の判断が必要な場合に行う。',
     interval: '重症例・競技復帰の判断が必要なとき',
     disease: ['muscleStrain'],
+  },
+
+  {
+    id: 'tibia-xray',
+    name: '下腿 単純X線（正面・側面）',
+    purpose: '脛骨疲労骨折・骨腫瘍の除外。ただし初期の疲労骨折は写らないことに注意する。',
+    interval: '一点の圧痛・安静時痛があるとき',
+    disease: ['shinSplints'],
+  },
+  {
+    id: 'tibia-mri',
+    name: '下腿MRI（または骨シンチ）',
+    purpose:
+      '単純X線に写らない初期の脛骨疲労骨折の検出。骨髄浮腫の有無で重症度を段階評価できる。前方皮質の骨折線は難治性のため必ず確認する。',
+    interval: '疲労骨折を疑うとき、保存療法で改善しないとき',
+    disease: ['shinSplints'],
   },
 
   // ---------------------------------------------------------------- 共通

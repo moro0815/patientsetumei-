@@ -9,6 +9,7 @@ import {
   sideLabel,
 } from './condition'
 import { CONDITIONS, CONDITION_REGIONS, emptyConditionInput, getCondition, isConditionKey, searchConditions } from '@/data/conditions'
+import { DISEASE_CARDS, DISEASE_REGIONS, MAIN_CARDS, cardsByRegion, searchDiseases } from '@/data/diseaseCatalog'
 import { ALL_EXERCISES, getExercise } from '@/data/exercises'
 import { getDrug } from '@/data/drugs'
 import { getLabOrder } from '@/data/fees'
@@ -197,8 +198,8 @@ describe('表示用の変換', () => {
 })
 
 describe('疾患モデルの登録簿', () => {
-  it('11疾患が登録されている', () => {
-    expect(CONDITIONS).toHaveLength(11)
+  it('12疾患が登録されている', () => {
+    expect(CONDITIONS).toHaveLength(12)
   })
 
   it('キーが重複していない', () => {
@@ -296,6 +297,50 @@ describe('疾患モデルの内容の妥当性（データの取り違え防止�
       const e = getExercise(id)!
       expect(e.disease, `${e.name} が ${c.key} 向けに登録されていません`).toContain(c.key)
     }
+  })
+})
+
+describe('トップ画面の疾患カタログ', () => {
+  it('15疾患すべてが載っている', () => {
+    expect(DISEASE_CARDS).toHaveLength(15)
+    expect(DISEASE_CARDS.length).toBe(3 + CONDITIONS.length)
+  })
+
+  it('最上段は骨粗鬆症と関節リウマチだけ', () => {
+    expect(MAIN_CARDS.map((c) => c.key)).toEqual(['osteoporosis', 'ra'])
+  })
+
+  it('変形性膝関節症は「股・膝」に置かれている', () => {
+    const knee = DISEASE_CARDS.find((c) => c.key === 'kneeOA')
+    expect(knee?.region).toBe('股・膝')
+  })
+
+  it('「股・膝」には膝と股関節が並ぶ', () => {
+    expect(cardsByRegion('股・膝').map((c) => c.key)).toEqual(['kneeOA', 'hipOA'])
+  })
+
+  it('すべてのカードが部位（または main）に属する', () => {
+    for (const c of DISEASE_CARDS) {
+      if (c.region === 'main') continue
+      expect(DISEASE_REGIONS).toContain(c.region)
+    }
+  })
+
+  it('キーが重複していない', () => {
+    const keys = DISEASE_CARDS.map((c) => c.key)
+    expect(new Set(keys).size).toBe(keys.length)
+  })
+
+  it('患者さんの言い方で検索できる（膝・ロコモを含む）', () => {
+    expect(searchDiseases('ひざ').map((c) => c.key)).toContain('kneeOA')
+    expect(searchDiseases('ロコモ').map((c) => c.key)).toContain('kneeOA')
+    expect(searchDiseases('リウマチ').map((c) => c.key)).toContain('ra')
+    expect(searchDiseases('シンスプリント').map((c) => c.key)).toEqual(['shinSplints'])
+    expect(searchDiseases('すね').map((c) => c.key)).toContain('shinSplints')
+  })
+
+  it('検索語が空ならすべて返す', () => {
+    expect(searchDiseases('')).toHaveLength(DISEASE_CARDS.length)
   })
 })
 
