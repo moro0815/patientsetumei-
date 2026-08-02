@@ -3,7 +3,7 @@ import { useStore } from '@/state/store'
 import { Banner, Section } from '@/components/ui'
 import { SOURCES } from '@/data/sources'
 import { DRUGS } from '@/data/drugs'
-import { EXERCISES, CATEGORY_LABEL } from '@/data/exercises'
+import { ALL_EXERCISES, CATEGORY_LABEL } from '@/data/exercises'
 import { NUTRIENTS } from '@/data/nutrition'
 import { ExerciseFigure } from '@/components/figures/exercise'
 import {
@@ -191,7 +191,7 @@ export function LibraryScreen() {
 
       {tab === 'exercises' && (
         <div className="grid gap-4 sm:grid-cols-2">
-          {EXERCISES.map((e) => (
+          {ALL_EXERCISES.map((e) => (
             <div key={e.id} className="card">
               <div className="flex flex-wrap items-baseline gap-2">
                 <h3 className="text-lg font-bold text-ink">{e.name}</h3>
