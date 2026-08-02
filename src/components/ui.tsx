@@ -96,23 +96,39 @@ export function NumberInput({
   unit?: string
   placeholder?: string
 }) {
+  // 想定範囲を外れた値は、入力自体は妨げずに見た目で知らせる。
+  // 桁の打ち間違い（NRSに60、可動域に900など）を、図やカルテ文に流し込む前に気づけるようにする。
+  const out =
+    value !== null &&
+    Number.isFinite(value) &&
+    ((min !== undefined && value < min) || (max !== undefined && value > max))
+
   return (
-    <span className="flex items-center gap-2">
-      <input
-        type="number"
-        className="input"
-        inputMode="decimal"
-        value={value ?? ''}
-        step={step}
-        min={min}
-        max={max}
-        placeholder={placeholder}
-        onChange={(e) => {
-          const raw = e.target.value
-          onChange(raw === '' ? null : Number(raw))
-        }}
-      />
-      {unit && <span className="shrink-0 text-sm font-bold text-ink-mute">{unit}</span>}
+    <span className="block">
+      <span className="flex items-center gap-2">
+        <input
+          type="number"
+          className={`input ${out ? '!border-alert-400 !bg-alert-50' : ''}`}
+          inputMode="decimal"
+          value={value ?? ''}
+          step={step}
+          min={min}
+          max={max}
+          aria-invalid={out || undefined}
+          placeholder={placeholder}
+          onChange={(e) => {
+            const raw = e.target.value
+            onChange(raw === '' ? null : Number(raw))
+          }}
+        />
+        {unit && <span className="shrink-0 text-sm font-bold text-ink-mute">{unit}</span>}
+      </span>
+      {out && (
+        <span className="mt-1 block text-xs font-bold text-alert-600">
+          想定される範囲（{min ?? '—'}〜{max ?? '—'}
+          {unit ?? ''}）を超えています。入力をご確認ください
+        </span>
+      )}
     </span>
   )
 }

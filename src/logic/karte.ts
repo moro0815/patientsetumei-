@@ -1,12 +1,14 @@
 import { getDrug, needsDentalCoordination, needsSequentialTherapy } from '@/data/drugs'
 import { getExercise } from '@/data/exercises'
 import { LIFESTYLE_ITEMS } from '@/data/nutrition'
-import { FEE_ITEMS, LAB_ORDERS } from '@/data/fees'
+import { FEE_ITEMS, feesForDisease, getLabOrder, labsForDisease } from '@/data/fees'
 import { DISEASE_LABEL } from '@/state/session'
 import type { FeeItem, LabOrderItem, Session } from '@/types'
 import { assessOsteoporosis, fmtT } from './osteoporosis'
 import { assessRa, ACTIVITY_LABEL } from './ra'
 import { assessLocomo, calcBmi, KL_GRADE_LABEL } from './locomo'
+import { getCondition } from '@/data/conditions'
+import { assessCondition, labelsOf, sideLabel } from './condition'
 
 /**
  * カルテ記載文の自動生成
@@ -165,7 +167,7 @@ export function buildKarte(session: Session): KarteOutput {
     lines.push('　・治療目標（T2T：寛解または低疾患活動性）と、3か月ごとの評価・6か月での見直しを説明')
     lines.push('　・薬物治療の進め方（MTXを基本とし、効果不十分ならbDMARD／JAK阻害薬を追加）を説明')
     a.t2tComment.forEach((c) => lines.push(`　・${c}`))
-  } else {
+  } else if (disease === 'kneeOA') {
     const k = session.knee
     const loco = assessLocomo(session.locomo)
     lines.push('■ 膝関節・移動機能')
@@ -192,6 +194,70 @@ export function buildKarte(session: Session): KarteOutput {
     lines.push('　・変形性膝関節症の病態（軟骨のすり減りと骨棘形成）を図で説明')
     lines.push('　・治療の順序（運動療法・体重管理・装具が土台、次に薬・注射・手術）を説明')
     lines.push('　・体重1kgの減量で歩行時の膝への負担が約3kg分軽減することを説明')
+  } else {
+    // ------------------------------------------------------------ 症状別疾患
+    const def = getCondition(disease)
+    const c = session.condition
+    if (def) {
+      const a = assessCondition(c, def)
+      lines.push(`■ ${def.label}`)
+      const head: string[] = []
+      if (c.side) head.push(`部位：${sideLabel(c.side)}`)
+      const dur = def.duration.find((d) => d.id === c.duration)
+      if (dur) head.push(`経過：${dur.label}`)
+      if (c.onset) head.push(`発症：${c.onset === 'sudden' ? '急性' : '緩徐'}`)
+      if (c.painNrs !== null) head.push(`疼痛NRS：${c.painNrs}/10`)
+      if (head.length > 0) {
+        lines.push(head.join('　'))
+        soapO.push(head.join('／'))
+      }
+      const st = def.stages?.find((x) => x.id === c.stage)
+      if (st) {
+        lines.push(`${def.stagesLabel ?? '病期'}：${st.label}（${st.detail}）`)
+        soapO.push(`${def.stagesLabel ?? '病期'}：${st.label}`)
+      }
+      for (const m of def.metrics ?? []) {
+        const v = c.metrics[m.key]
+        if (v != null) {
+          lines.push(`${m.label}：${v} ${m.unit}`)
+          soapO.push(`${m.label} ${v}${m.unit}`)
+        }
+      }
+      const sym = labelsOf(c.symptoms, def.symptomOptions)
+      if (sym.length > 0) {
+        lines.push(`症状：${sym.join('、')}`)
+        soapS.push(sym.join('、'))
+      }
+      const fnd = labelsOf(c.findings, def.findingOptions)
+      if (fnd.length > 0) {
+        lines.push(`所見：${fnd.join('、')}`)
+        soapO.push(fnd.join('、'))
+      }
+      if (a.redFlags.length > 0) {
+        lines.push(`【レッドフラッグ】${a.redFlags.join('、')}`)
+        lines.push('　→ 画像評価・専門医への紹介を検討')
+        soapA.push(`レッドフラッグあり：${a.redFlags.join('、')}`)
+      }
+      const prior = labelsOf(c.priorTreatments, def.priorTreatmentOptions)
+      if (prior.length > 0) lines.push(`これまでの治療：${prior.join('、')}`)
+      if (c.note) lines.push(`備考：${c.note}`)
+      lines.push(
+        `治療方針：第${a.suggestedStep}段「${def.treatments[a.suggestedStep - 1]?.title ?? ''}」を提案` +
+          `（${a.suggestedStepReasons.join('、')}）`,
+      )
+      soapA.push(`${def.label}${c.side ? `（${sideLabel(c.side)}）` : ''}`)
+      soapP.push(`第${a.suggestedStep}段：${def.treatments[a.suggestedStep - 1]?.title ?? ''}`)
+      if (a.cautions.length > 0) {
+        lines.push('留意事項：')
+        a.cautions.forEach((x) => lines.push(`　・${x}`))
+      }
+      lines.push('')
+      lines.push('■ 説明した内容')
+      lines.push(`　・${def.label}の病態（${def.what[0] ?? ''}）を図で説明`)
+      lines.push(`　・自然経過と見通し（${def.course.headline}）を説明`)
+      lines.push('　・治療の順序（運動療法・生活の工夫を土台に、薬・注射と段階的に進める）を説明')
+      lines.push(`　・受診が必要なサイン（${def.warnSigns.slice(0, 2).join('、')}）を説明し、文書で交付`)
+    }
   }
 
   // ---------------------------------------------------------------- 薬物治療
@@ -268,7 +334,7 @@ export function buildKarte(session: Session): KarteOutput {
     soapP.push(`次回 ${plan.nextVisit}`)
   }
   if (plan.nextTests.length > 0) {
-    const names = plan.nextTests.map((id) => LAB_ORDERS.find((l) => l.id === id)?.name ?? id)
+    const names = plan.nextTests.map((id) => getLabOrder(id)?.name ?? id)
     lines.push(`　予定検査：${names.join('、')}`)
     soapP.push(`検査予定：${names.join('、')}`)
   }
@@ -342,7 +408,7 @@ export function buildQuickSummary(session: Session): string {
     if (r.esr !== null) bits.push(`ESR ${r.esr}`)
     if (r.erosion) bits.push('骨びらんあり')
     parts.push(`[RA] ${bits.join(' / ')}`)
-  } else {
+  } else if (disease === 'kneeOA') {
     const loco = assessLocomo(session.locomo)
     const bmi = calcBmi(patient.heightCm, patient.weightKg)
     const bits: string[] = []
@@ -354,6 +420,24 @@ export function buildQuickSummary(session: Session): string {
     if (loco.stage !== null) bits.push(loco.stage === 0 ? 'ロコモ該当なし' : `ロコモ度${loco.stage}`)
     if (bmi !== null) bits.push(`BMI ${bmi}`)
     parts.push(`[膝OA/ロコモ] ${bits.join(' / ')}`)
+  } else {
+    const def = getCondition(disease)
+    const c = session.condition
+    if (def) {
+      const a = assessCondition(c, def)
+      const bits: string[] = []
+      if (c.side) bits.push(sideLabel(c.side))
+      if (c.painNrs !== null) bits.push(`NRS ${c.painNrs}/10`)
+      const dur = def.duration.find((d) => d.id === c.duration)
+      if (dur) bits.push(dur.label)
+      const st = def.stages?.find((x) => x.id === c.stage)
+      if (st) bits.push(st.label)
+      for (const m of def.metrics ?? []) {
+        if (c.metrics[m.key] != null) bits.push(`${m.label} ${c.metrics[m.key]}${m.unit}`)
+      }
+      if (a.redFlags.length > 0) bits.push(`※RedFlag:${a.redFlags.length}件`)
+      parts.push(`[${def.label}] ${bits.join(' / ')}`)
+    }
   }
 
   const plan2: string[] = []
@@ -374,6 +458,21 @@ export function buildQuickSummary(session: Session): string {
 /** 検査値だけを1行にまとめる（他院への情報提供やサマリ作成に使う） */
 export function buildValuesLine(session: Session): string {
   const { disease } = session
+  const condDef = getCondition(disease)
+  if (condDef) {
+    const c = session.condition
+    return [
+      c.side ? `患側 ${sideLabel(c.side)}` : null,
+      c.painNrs !== null ? `NRS ${c.painNrs}/10` : null,
+      condDef.duration.find((d) => d.id === c.duration)?.label ?? null,
+      condDef.stages?.find((x) => x.id === c.stage)?.label ?? null,
+      ...(condDef.metrics ?? []).map((m) =>
+        c.metrics[m.key] != null ? `${m.label} ${c.metrics[m.key]}${m.unit}` : null,
+      ),
+    ]
+      .filter(Boolean)
+      .join(' / ')
+  }
   if (disease === 'ra') {
     const r = session.ra
     const a = assessRa(r)
@@ -487,6 +586,15 @@ export function suggestFees(session: Session): FeeItem[] {
     out.push(...FEE_ITEMS.filter((f) => f.id === 'joint-injection'))
   }
 
+  // 症状別疾患：その疾患に紐づく候補をそのまま出す（点数は「要確認」で表示される）
+  const condDef = getCondition(disease)
+  if (condDef) {
+    out.push(...feesForDisease(disease))
+    if (plan.drugIds.includes('steroid-injection')) {
+      out.push(...FEE_ITEMS.filter((f) => f.id === 'joint-injection'))
+    }
+  }
+
   if (plan.drugIds.some(needsDentalCoordination)) {
     out.push(...FEE_ITEMS.filter((f) => f.id === 'shinryo-joho'))
   }
@@ -510,7 +618,7 @@ export function suggestFees(session: Session): FeeItem[] {
 
 export function suggestLabs(session: Session): LabOrderItem[] {
   const { disease, plan } = session
-  const base = LAB_ORDERS.filter((l) => l.disease.includes(disease))
+  const base = labsForDisease(disease)
 
   // 薬剤クラスに紐づく検査を前に出す
   const classes = new Set(plan.drugIds.map((id) => getDrug(id)?.cls).filter(Boolean) as string[])
@@ -551,10 +659,21 @@ export function suggestNextVisit(session: Session): { label: string; value: stri
     options.push({ label: 'T2Tの評価（3か月後）', value: '3か月後（活動性評価・治療見直しの検討）' })
     options.push({ label: '6か月での治療目標の判定', value: '6か月後（治療目標の判定）' })
     options.push({ label: '画像評価（6〜12か月後）', value: '6〜12か月後（手足X線）' })
-  } else {
+  } else if (disease === 'kneeOA') {
     options.push({ label: 'リハビリ開始後の評価（2〜4週後）', value: '2〜4週後（リハビリ経過）' })
     options.push({ label: '運動療法の効果判定（3か月後）', value: '3か月後（疼痛・機能の再評価）' })
     options.push({ label: 'ロコモ度テストの再評価（6か月後）', value: '6か月後（ロコモ度テスト再評価）' })
+  } else {
+    const def = getCondition(disease)
+    if (def) {
+      options.push({ label: `この疾患の目安（${def.nextVisit}）`, value: def.nextVisit })
+      const a = assessCondition(session.condition, def)
+      if (a.referralSuggested) {
+        options.push({ label: '至急（画像評価・紹介）', value: '至急（精査・専門医紹介）' })
+      }
+    }
+    options.push({ label: 'リハビリ開始後の評価（2〜4週後）', value: '2〜4週後（リハビリ経過）' })
+    options.push({ label: '運動療法の効果判定（3か月後）', value: '3か月後（疼痛・機能の再評価）' })
   }
   return options
 }

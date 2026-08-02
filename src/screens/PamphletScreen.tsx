@@ -1,7 +1,13 @@
 import { useEffect } from 'react'
 import { useStore } from '@/state/store'
 import { Banner, SegButton } from '@/components/ui'
-import { Pamphlet, SECTION_LABELS, type PamphletSection } from '@/components/pamphlet/Pamphlet'
+import {
+  FALL_SHEET_DISEASES,
+  NUTRITION_SHEET_DISEASES,
+  Pamphlet,
+  SECTION_LABELS,
+  type PamphletSection,
+} from '@/components/pamphlet/Pamphlet'
 
 /**
  * STEP 4：パンフレットの作成と印刷
@@ -18,8 +24,12 @@ export function PamphletScreen() {
     const defaults: PamphletSection[] = ['cover', 'mechanism', 'schedule']
     if (session.plan.drugIds.length > 0) defaults.splice(2, 0, 'treatment')
     if (session.plan.prescription.length > 0) defaults.splice(defaults.length - 1, 0, 'exercise', 'record')
-    defaults.splice(defaults.length - 1, 0, 'nutrition')
-    if (session.disease !== 'ra') defaults.splice(defaults.length - 1, 0, 'fall')
+    if (NUTRITION_SHEET_DISEASES.includes(session.disease)) {
+      defaults.splice(defaults.length - 1, 0, 'nutrition')
+    }
+    if (FALL_SHEET_DISEASES.includes(session.disease)) {
+      defaults.splice(defaults.length - 1, 0, 'fall')
+    }
     setSession((prev) => ({ ...prev, pamphletSections: defaults }))
   }, [session.pamphletSections.length, session.plan.drugIds.length, session.plan.prescription.length, session.disease, setSession])
 
@@ -70,7 +80,8 @@ export function PamphletScreen() {
               const disabled =
                 (s.key === 'treatment' && session.plan.drugIds.length === 0) ||
                 ((s.key === 'exercise' || s.key === 'record') && session.plan.prescription.length === 0) ||
-                (s.key === 'fall' && session.disease === 'ra')
+                (s.key === 'fall' && !FALL_SHEET_DISEASES.includes(session.disease)) ||
+                (s.key === 'nutrition' && !NUTRITION_SHEET_DISEASES.includes(session.disease))
               return (
                 <button
                   key={s.key}

@@ -1,3 +1,4 @@
+import type { DiseaseKey } from '@/types'
 /**
  * 栄養療法・生活指導のコンテンツ
  *
@@ -182,7 +183,7 @@ export const FALL_PREVENTION: FallPreventionItem[] = [
 export interface LifestyleItem {
   id: string
   label: string
-  disease: ('osteoporosis' | 'ra' | 'kneeOA')[]
+  disease: DiseaseKey[]
   detail: string
 }
 
@@ -258,5 +259,98 @@ export const LIFESTYLE_ITEMS: LifestyleItem[] = [
     label: '薬を続けることの大切さ',
     disease: ['osteoporosis', 'ra'],
     detail: '骨粗鬆症の薬は「痛みがないから効いていない」わけではありません。中断すると骨折の危険が戻ってしまいます。',
+  },
+  // ---------------------------------------------------------------- 症状別疾患
+  {
+    id: 'posture-work',
+    label: '姿勢と作業環境の見直し',
+    disease: ['lumbarStenosis', 'lumbarDiscHernia', 'cervicalRadiculopathy', 'vertebralFracture'],
+    detail:
+      'パソコンの画面は目の高さに。30分に1回は立ち上がる。スマートフォンは顔の高さまで上げて見る。中腰・ひねりを避ける。',
+  },
+  {
+    id: 'lifting',
+    label: '物の持ち上げ方（腰を守る）',
+    disease: ['lumbarStenosis', 'lumbarDiscHernia', 'vertebralFracture', 'hipOA'],
+    detail: '腰を曲げずに、ひざを曲げて、荷物を体に近づけて持ち上げます。ひねりながら持ち上げないこと。',
+  },
+  {
+    id: 'interval-walk',
+    label: '休みながら歩く（インターバル歩行）',
+    disease: ['lumbarStenosis'],
+    detail:
+      'しびれてきたら我慢せず、1〜2分座って休みます。そのあとまた歩けます。カート・自転車を使うと前かがみになれて楽です。',
+  },
+  {
+    id: 'cane-use',
+    label: '杖の使い方（痛い方の反対の手に持つ）',
+    disease: ['hipOA', 'kneeOA', 'lumbarStenosis'],
+    detail: '痛い方の反対の手に持つだけで、股関節・膝への負担が約4割減ります。恥ずかしがらずに使いましょう。',
+  },
+  {
+    id: 'washiki',
+    label: '和式から洋式の生活へ',
+    disease: ['hipOA', 'kneeOA', 'vertebralFracture'],
+    detail: '正座・あぐら・低い椅子・和式トイレは関節に負担がかかります。椅子・洋式トイレ・ベッドに変えましょう。',
+  },
+  {
+    id: 'shoe-choice',
+    label: '靴の選び方',
+    disease: ['plantarFasciitis', 'ankleSprain', 'kneeOA', 'hipOA'],
+    detail:
+      'かかとにクッションがあり、足首を支えるひも靴を選びます。室内でも裸足で硬い床を歩かないようにします。',
+  },
+  {
+    id: 'load-reduction',
+    label: '痛む動作を減らす工夫',
+    disease: ['tennisElbow', 'triggerFinger', 'plantarFasciitis', 'frozenShoulder'],
+    detail:
+      '物は両手で、体に近づけて持つ。手のひらを上に向けて持つ。同じ動作を長く続けず、こまめに休む。道具の持ち手を太くする。',
+  },
+  {
+    id: 'sleep-position',
+    label: '眠るときの姿勢の工夫',
+    disease: ['frozenShoulder', 'cervicalRadiculopathy', 'lumbarDiscHernia'],
+    detail:
+      '肩：痛い方の腕の下にクッションを入れる。首：枕は高すぎないものを。腰：横向きでひざを軽く曲げる。',
+  },
+  {
+    id: 'acute-care',
+    label: 'けが直後の対応（冷やす・圧迫・挙上）',
+    disease: ['ankleSprain', 'muscleStrain'],
+    detail:
+      '15〜20分冷やすことを1日数回。弾性包帯で軽く圧迫し、心臓より高く上げて休みます。最初の48時間は飲酒・熱いお風呂・強いマッサージを避けます。',
+  },
+  {
+    id: 'graded-return',
+    label: '段階的なスポーツ復帰',
+    disease: ['ankleSprain', 'muscleStrain'],
+    detail:
+      '「痛みが消えた」ではなく「力が戻った」ことを確かめて復帰します。1段進むごとに翌日の痛み・腫れを確認し、出たら前の段階に戻ります。',
+  },
+  {
+    id: 'blood-sugar',
+    label: '血糖のコントロール',
+    disease: ['frozenShoulder', 'triggerFinger'],
+    detail: '糖尿病があると、これらの病気は起こりやすく、治りも遅くなります。血糖の管理が治療の一部になります。',
+  },
+  {
+    id: 'exercise-adherence',
+    label: '運動を続けること',
+    disease: [
+      'lumbarStenosis',
+      'lumbarDiscHernia',
+      'cervicalRadiculopathy',
+      'plantarFasciitis',
+      'tennisElbow',
+      'frozenShoulder',
+      'triggerFinger',
+      'hipOA',
+      'vertebralFracture',
+      'ankleSprain',
+      'muscleStrain',
+    ],
+    detail:
+      '効果が出るまでに数週間〜数か月かかります。1回に頑張るより、少しずつ毎日続ける方が確実に効きます。',
   },
 ]

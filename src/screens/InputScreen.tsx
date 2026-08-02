@@ -7,6 +7,8 @@ import { buildValuesLine } from '@/logic/karte'
 import { OsteoForm } from './forms/OsteoForm'
 import { RaForm } from './forms/RaForm'
 import { KneeForm } from './forms/KneeForm'
+import { ConditionForm } from './forms/ConditionForm'
+import { getCondition } from '@/data/conditions'
 import { AssessmentPanel } from './forms/AssessmentPanel'
 
 /**
@@ -120,6 +122,7 @@ export function InputScreen() {
           {session.disease === 'osteoporosis' && <OsteoForm />}
           {session.disease === 'ra' && <RaForm />}
           {session.disease === 'kneeOA' && <KneeForm />}
+          {getCondition(session.disease) && <ConditionForm />}
         </div>
 
         {/* 判定パネル（医師向け・画面右に固定） */}

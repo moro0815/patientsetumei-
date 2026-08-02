@@ -26,6 +26,9 @@ import {
 } from '@/components/figures/joint'
 import { KneeOaFigure, KneeLoadFigure, KneeTreatmentPyramidFigure } from '@/components/figures/knee'
 import { DailyFoodFigure, FallPreventionMapFigure } from '@/components/figures/lifestyle'
+import { RecoveryTimelineFigure } from '@/components/figures/generic'
+import { getCondition } from '@/data/conditions'
+import { assessCondition, currentPhaseIndex, sideLabel } from '@/logic/condition'
 import type { Session } from '@/types'
 
 /**
@@ -59,6 +62,29 @@ export const SECTION_LABELS: { key: PamphletSection; label: string; detail: stri
   { key: 'schedule', label: '次回の予定・連絡先', detail: '通院予定と困ったときの連絡先' },
 ]
 
+/** 転倒予防のページを出す疾患（転倒が次のけがに直結するもの） */
+export const FALL_SHEET_DISEASES: Session['disease'][] = [
+  'osteoporosis',
+  'kneeOA',
+  'hipOA',
+  'vertebralFracture',
+  'lumbarStenosis',
+  'ankleSprain',
+]
+
+/**
+ * 栄養のページを出す疾患。
+ * カルシウム・ビタミンDの話が治療に直結するもの（骨・関節の病気）に限る。
+ * 肩や指の病気にこのページを付けても、患者さんには関係のない情報になる。
+ */
+export const NUTRITION_SHEET_DISEASES: Session['disease'][] = [
+  'osteoporosis',
+  'ra',
+  'kneeOA',
+  'hipOA',
+  'vertebralFracture',
+]
+
 export function Pamphlet({
   session,
   clinic,
@@ -79,8 +105,8 @@ export function Pamphlet({
       {has('treatment') && session.plan.drugIds.length > 0 && <TreatmentSheet session={session} clinic={clinic} />}
       {has('exercise') && session.plan.prescription.length > 0 && <ExerciseSheet session={session} />}
       {has('record') && session.plan.prescription.length > 0 && <RecordSheet session={session} />}
-      {has('nutrition') && <NutritionSheet session={session} />}
-      {has('fall') && session.disease !== 'ra' && <FallSheet />}
+      {has('nutrition') && NUTRITION_SHEET_DISEASES.includes(session.disease) && <NutritionSheet session={session} />}
+      {has('fall') && FALL_SHEET_DISEASES.includes(session.disease) && <FallSheet />}
       {has('schedule') && <ScheduleSheet session={session} clinic={clinic} />}
     </div>
   )
@@ -292,7 +318,7 @@ function buildFindings(session: Session): { label: string; value: string; note?:
       value: '炎症がほぼない状態（寛解）',
       note: '3か月ごとに測って、6か月で判断します',
     })
-  } else {
+  } else if (disease === 'kneeOA') {
     const k = kneeSummary(session.knee, patient)
     const loco = assessLocomo(session.locomo)
     const bmi = calcBmi(patient.heightCm, patient.weightKg)
@@ -314,6 +340,22 @@ function buildFindings(session: Session): { label: string; value: string; note?:
         value: `${patient.weightKg}kg（BMI ${bmi}）`,
         note: target && target > 0 ? `${target}kg 減らすと膝の負担が約${Math.round(target * 3)}kg 軽くなります` : undefined,
       })
+    }
+  } else {
+    const def = getCondition(disease)
+    const c = session.condition
+    if (def) {
+      out.push({ label: '診断', value: `${sideLabel(c.side)}${def.label}`, note: def.oneLiner })
+      if (c.painNrs !== null) out.push({ label: '痛みの強さ', value: `${c.painNrs} / 10` })
+      const d = def.duration.find((x) => x.id === c.duration)
+      if (d) out.push({ label: '症状が始まってから', value: d.label })
+      const st = def.stages?.find((x) => x.id === c.stage)
+      if (st) out.push({ label: def.stagesLabel ?? '病期', value: st.label, note: st.detail })
+      for (const m of def.metrics ?? []) {
+        const v = c.metrics[m.key]
+        if (v != null) out.push({ label: m.label, value: `${v} ${m.unit}` })
+      }
+      out.push({ label: 'これからの見通し', value: def.course.headline })
     }
   }
   return out
@@ -363,7 +405,99 @@ function PFig({ children, w = 150, className = '' }: { children: ReactNode; w?: 
 function MechanismSheet({ session }: { session: Session }) {
   if (session.disease === 'osteoporosis') return <OsteoMechanismSheets session={session} />
   if (session.disease === 'ra') return <RaMechanismSheets session={session} />
-  return <KneeMechanismSheets session={session} />
+  if (session.disease === 'kneeOA') return <KneeMechanismSheets session={session} />
+  return <ConditionMechanismSheets session={session} />
+}
+
+/**
+ * 症状別疾患のパンフレット本文。
+ * 疾患モデル（data/conditions）から3枚を組み立てる。
+ *   ① 病気のしくみ（図＋何が起きているか＋なぜ痛いか）
+ *   ② 見通しと治療の順序
+ *   ③ 生活の工夫・避けること・すぐ受診が必要なサイン
+ */
+function ConditionMechanismSheets({ session }: { session: Session }) {
+  const def = getCondition(session.disease)
+  if (!def) return null
+  const c = session.condition
+  const a = assessCondition(c, def)
+  const phase = currentPhaseIndex(c, def)
+
+  return (
+    <>
+      <Sheet title={`${def.label}とは、どんな病気でしょうか`} page="病気のしくみ">
+        <p className="mb-2 text-[11pt] font-bold text-slate-800">{def.oneLiner}</p>
+        <PFig w={158} className="mb-3">
+          {def.figure(c, session)}
+        </PFig>
+        <Box title="■ 体の中で何が起きているのか" className="mb-3">
+          <ul className="space-y-1">
+            {def.what.map((t, i) => (
+              <li key={i}>・{t}</li>
+            ))}
+          </ul>
+        </Box>
+        <Box title="■ なぜ痛み・しびれが出るのか">
+          <ul className="space-y-1">
+            {def.whyPain.map((t, i) => (
+              <li key={i}>・{t}</li>
+            ))}
+          </ul>
+        </Box>
+      </Sheet>
+
+      <Sheet title="これからの見通しと、治療の進め方" page="見通しと治療">
+        <p className="mb-2 text-[12pt] font-extrabold text-slate-900">{def.course.headline}</p>
+        <PFig w={170} className="mb-3">
+          <RecoveryTimelineFigure phases={def.course.phases} currentIndex={phase} />
+        </PFig>
+        <Box title="■ 経過について" className="mb-3">
+          <ul className="space-y-1">
+            {def.course.points.map((t, i) => (
+              <li key={i}>・{t}</li>
+            ))}
+          </ul>
+        </Box>
+        <Box title="■ 治療は下の段から積み上げます" tone="fill">
+          <ol className="space-y-1.5">
+            {def.treatments.map((t, i) => (
+              <li key={t.title} className={i + 1 === a.suggestedStep ? 'font-bold' : ''}>
+                {i + 1}. {t.title}
+                {i + 1 === a.suggestedStep && <span className="ml-1">← 今日ご提案した段階</span>}
+              </li>
+            ))}
+          </ol>
+        </Box>
+      </Sheet>
+
+      <Sheet title="毎日の生活で気をつけること" page="生活の工夫">
+        <Box title="■ やってみましょう" className="mb-3">
+          <ul className="space-y-1">
+            {def.selfCare.map((t, i) => (
+              <li key={i}>□ {t}</li>
+            ))}
+          </ul>
+        </Box>
+        <Box title="■ 避けたほうがよいこと" className="mb-3">
+          <ul className="space-y-1">
+            {def.avoid.map((t, i) => (
+              <li key={i}>・{t}</li>
+            ))}
+          </ul>
+        </Box>
+        <Box title="■ こんなときは、すぐご連絡ください" tone="warn" className="mb-3">
+          <ul className="space-y-1">
+            {def.warnSigns.map((t, i) => (
+              <li key={i} className="font-bold">
+                ・{t}
+              </li>
+            ))}
+          </ul>
+        </Box>
+        <WriteLines n={3} label="■ 生活の中で変えてみることを書いておきましょう" />
+      </Sheet>
+    </>
+  )
 }
 
 function OsteoMechanismSheets({ session }: { session: Session }) {

@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { ArrowDefs, Figure, Floor, PALETTE, StickPerson } from './common'
 import type { ExerciseFigureKey } from '@/types'
 import type { StickPose } from './common'
+import { EXERCISE2_MAP } from './exercise2'
 
 /* =========================================================================
    運動療法のイラスト
@@ -667,6 +668,7 @@ function Aquatic() {
 // ---------------------------------------------------------------- ディスパッチャ
 
 const MAP: Record<ExerciseFigureKey, () => ReactElement> = {
+  ...EXERCISE2_MAP,
   oneLegStand: OneLegStand,
   squat: Squat,
   heelRaise: HeelRaise,
@@ -682,7 +684,7 @@ const MAP: Record<ExerciseFigureKey, () => ReactElement> = {
   shoulderPulley: ShoulderPulley,
   jointProtect: JointProtect,
   aquatic: Aquatic,
-}
+} as Record<ExerciseFigureKey, () => ReactElement>
 
 export function ExerciseFigure({ figure }: { figure: ExerciseFigureKey }) {
   const Comp = MAP[figure]

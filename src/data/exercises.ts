@@ -1,4 +1,5 @@
-import type { ExerciseItem } from '@/types'
+import type { DiseaseKey, ExerciseItem } from '@/types'
+import { EXERCISES_CONDITION, RECOMMENDED_SETS_CONDITION } from './exercises2'
 
 /**
  * 運動療法メニュー（当院の中心的な治療）
@@ -24,7 +25,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '開眼片脚立ち（ロコトレ①）',
     shortName: 'かた足立ち',
     category: 'balance',
-    disease: ['osteoporosis', 'kneeOA'],
+    disease: ['osteoporosis', 'kneeOA', 'ankleSprain'],
     level: 'standing-support',
     steps: [
       '床につかない程度に片脚を上げます。',
@@ -92,7 +93,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '椅子からの立ち上がり運動',
     shortName: '立ち上がり運動',
     category: 'strength',
-    disease: ['osteoporosis', 'kneeOA'],
+    disease: ['osteoporosis', 'kneeOA', 'lumbarStenosis', 'hipOA', 'vertebralFracture'],
     level: 'standing-support',
     steps: [
       '椅子に浅めに腰かけ、両腕を胸の前で組みます。',
@@ -114,7 +115,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: 'かかと上げ（カーフレイズ）',
     shortName: 'かかと上げ',
     category: 'weightBearing',
-    disease: ['osteoporosis'],
+    disease: ['osteoporosis', 'ankleSprain'],
     level: 'standing-support',
     steps: [
       'テーブルや椅子の背に軽く手をおいて立ちます。',
@@ -137,7 +138,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '背筋（せすじ）を伸ばす運動',
     shortName: '背すじ運動',
     category: 'backExtensor',
-    disease: ['osteoporosis'],
+    disease: ['osteoporosis', 'vertebralFracture'],
     level: 'sitting',
     steps: [
       '椅子に深く座り、両手を後ろで組みます（届かない方は太ももの横に置きます）。',
@@ -162,7 +163,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: 'ウォーキング',
     shortName: 'ウォーキング',
     category: 'aerobic',
-    disease: ['osteoporosis', 'ra', 'kneeOA'],
+    disease: ['osteoporosis', 'ra', 'kneeOA', 'lumbarStenosis', 'hipOA'],
     level: 'active',
     steps: [
       'かかとから着地し、背すじを伸ばして歩きます。',
@@ -186,7 +187,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '水中運動（プールでの歩行・体操）',
     shortName: '水中運動',
     category: 'aquatic',
-    disease: ['kneeOA', 'ra', 'osteoporosis'],
+    disease: ['kneeOA', 'ra', 'osteoporosis', 'hipOA'],
     level: 'active',
     steps: [
       '胸の高さくらいの水中で、ゆっくり歩きます。',
@@ -209,7 +210,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '大腿四頭筋セッティング（ももの前の筋トレ）',
     shortName: 'ももの前の筋トレ',
     category: 'strength',
-    disease: ['kneeOA', 'ra'],
+    disease: ['kneeOA', 'ra', 'vertebralFracture', 'hipOA'],
     level: 'sitting',
     steps: [
       '床や布団に座り、ひざをまっすぐ伸ばします。',
@@ -249,7 +250,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '横向き脚上げ（お尻の横の筋トレ）',
     shortName: '横向き脚上げ',
     category: 'strength',
-    disease: ['kneeOA', 'osteoporosis'],
+    disease: ['kneeOA', 'osteoporosis', 'hipOA'],
     level: 'sitting',
     steps: [
       '横向きに寝て、下の脚を軽く曲げます。',
@@ -267,7 +268,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '足首の運動・ふくらはぎのストレッチ',
     shortName: '足首の運動',
     category: 'rom',
-    disease: ['kneeOA', 'osteoporosis'],
+    disease: ['kneeOA', 'osteoporosis', 'ankleSprain', 'vertebralFracture'],
     level: 'sitting',
     steps: [
       '椅子に座り、足首をゆっくり上下に動かします（20回）。',
@@ -287,7 +288,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '手指・手首の関節可動域運動',
     shortName: '手の運動',
     category: 'rom',
-    disease: ['ra'],
+    disease: ['ra', 'triggerFinger'],
     level: 'sitting',
     steps: [
       '入浴中や入浴後、手が温まっているときに行います。',
@@ -333,7 +334,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '肩の可動域運動（振り子・棒体操）',
     shortName: '肩の運動',
     category: 'rom',
-    disease: ['ra', 'osteoporosis'],
+    disease: ['ra', 'osteoporosis', 'frozenShoulder'],
     level: 'sitting',
     steps: [
       '体を軽く前に倒して、腕を力を抜いてぶら下げ、前後・左右に小さく振ります（各10回）。',
@@ -349,7 +350,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '関節を守る生活の工夫（関節保護）',
     shortName: '関節を守る工夫',
     category: 'jointProtection',
-    disease: ['ra', 'kneeOA'],
+    disease: ['ra', 'kneeOA', 'hipOA'],
     level: 'active',
     steps: [
       '重い物は、指先でつまむのではなく、両手のひら全体で持ちます。',
@@ -368,14 +369,17 @@ export const EXERCISES: ExerciseItem[] = [
   },
 ]
 
-const byId = new Map(EXERCISES.map((e) => [e.id, e]))
+/** 骨粗鬆症・RA・膝OA に加えて、症状別疾患の運動も同じ1本のマスタとして扱う */
+export const ALL_EXERCISES: ExerciseItem[] = [...EXERCISES, ...EXERCISES_CONDITION]
+
+const byId = new Map(ALL_EXERCISES.map((e) => [e.id, e]))
 
 export function getExercise(id: string): ExerciseItem | undefined {
   return byId.get(id)
 }
 
-export function exercisesForDisease(disease: 'osteoporosis' | 'ra' | 'kneeOA'): ExerciseItem[] {
-  return EXERCISES.filter((e) => e.disease.includes(disease))
+export function exercisesForDisease(disease: DiseaseKey): ExerciseItem[] {
+  return ALL_EXERCISES.filter((e) => e.disease.includes(disease))
 }
 
 export const CATEGORY_LABEL: Record<ExerciseItem['category'], string> = {
@@ -387,16 +391,17 @@ export const CATEGORY_LABEL: Record<ExerciseItem['category'], string> = {
   rom: '関節を動かす',
   jointProtection: '関節を守る工夫',
   aquatic: '水中運動',
+  stretch: 'ストレッチ（伸ばす）',
+  stabilization: '体をささえる力',
+  eccentric: 'ゆっくり戻す運動',
+  nerveGlide: '神経・腱をすべらせる',
 }
 
 /**
  * 推奨される標準セット。
  * 医師が「おすすめをまとめて選ぶ」ボタンで使う。
  */
-export const RECOMMENDED_SETS: Record<
-  'osteoporosis' | 'ra' | 'kneeOA',
-  { label: string; ids: string[]; note: string }[]
-> = {
+const RECOMMENDED_SETS_CORE: Record<string, { label: string; ids: string[]; note: string }[]> = {
   osteoporosis: [
     {
       label: '基本セット（ロコトレ＋背すじ）',
@@ -453,4 +458,10 @@ export const RECOMMENDED_SETS: Record<
       note: '有酸素運動と筋力訓練を組み合わせ、減量と併せて行います。',
     },
   ],
+}
+
+/** 全疾患をまとめた推奨セット */
+export const RECOMMENDED_SETS: Record<string, { label: string; ids: string[]; note: string }[]> = {
+  ...RECOMMENDED_SETS_CORE,
+  ...RECOMMENDED_SETS_CONDITION,
 }

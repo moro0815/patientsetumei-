@@ -1,0 +1,159 @@
+import type { DrugInfo } from '@/types'
+
+/**
+ * 症状別疾患でよく使う薬剤
+ *
+ * 注意
+ * - 商品名は代表例です。院内採用品に置き換えてお使いください。
+ * - 用量・禁忌・併用注意は、必ず最新の添付文書でご確認ください。
+ * - 費用は3割負担の概算であり、薬価改定で変わります。
+ */
+
+export const DRUGS_CONDITION: DrugInfo[] = [
+  {
+    id: 'nsaid-topical',
+    generic: '外用NSAIDs（貼り薬・塗り薬）',
+    brands: ['ロキソニンテープ', 'モーラステープ', 'ボルタレンゲル'],
+    cls: 'nsaid',
+    disease: [
+      'kneeOA',
+      'hipOA',
+      'tennisElbow',
+      'frozenShoulder',
+      'plantarFasciitis',
+      'triggerFinger',
+      'ankleSprain',
+      'muscleStrain',
+      'lumbarStenosis',
+      'lumbarDiscHernia',
+      'cervicalRadiculopathy',
+      'vertebralFracture',
+    ],
+    route: '貼り薬・塗り薬（1日1〜2回）',
+    plain: '痛むところに直接貼る・塗る薬です。飲み薬より体への負担が少なくてすみます。',
+    howItWorks: '炎症を起こす物質がつくられるのを、その場所で抑えます。',
+    schedule: '1日1〜2回、痛むところに貼る／塗ります。',
+    cautions: [
+      'かぶれることがあります。赤くなったりかゆくなったら中止してご相談ください。',
+      'ケトプロフェンの貼り薬は、貼ったところが日光に当たると強くかぶれることがあります。外出時は衣服で覆い、はがしたあとも数週間は日光を避けてください。',
+      '傷や湿疹のあるところには貼らないでください。',
+    ],
+    clinicalNote:
+      '運動器疼痛では第一選択として外用を優先する。全身曝露が少なく、高齢者・腎機能低下例・消化管リスク例で有用。ケトプロフェンの光線過敏症は必ず説明する。',
+    costHint: '3割負担で月およそ300〜800円',
+    sources: ['knee-gl-2023', 'lbp-gl-2019'],
+  },
+  {
+    id: 'limaprost',
+    generic: 'リマプロスト アルファデクス',
+    brands: ['オパルモン', 'プロレナール'],
+    cls: 'limaprost',
+    disease: ['lumbarStenosis'],
+    route: '内服（1日3回）',
+    plain: '神経のまわりの血の巡りをよくして、足のしびれや歩ける距離をよくする薬です。',
+    howItWorks: '血管を広げて血液の流れをよくし、押された神経に酸素と栄養が届きやすくします。',
+    schedule: '1日3回、食後に飲みます。効果が出るまで数週間かかります。',
+    cautions: [
+      '出血しやすくなることがあります。血をサラサラにする薬を飲んでいる方は必ずお知らせください。',
+      '下痢・吐き気・顔のほてりが出ることがあります。',
+      '妊娠中・妊娠の可能性のある方は使えません。',
+    ],
+    clinicalNote:
+      '腰部脊柱管狭窄症（馬尾型）の自覚症状と歩行距離の改善が報告されている。抗血小板薬・抗凝固薬併用時は出血傾向に注意。効果判定は4〜8週で行う。',
+    costHint: '3割負担で月およそ1,000〜1,500円',
+    sources: ['lss-gl-2021'],
+  },
+  {
+    id: 'pregabalin',
+    generic: 'プレガバリン／ミロガバリン',
+    brands: ['リリカ', 'タリージェ'],
+    cls: 'pregabalin',
+    disease: ['lumbarStenosis', 'lumbarDiscHernia', 'cervicalRadiculopathy'],
+    route: '内服（1日2回）',
+    plain: '神経が傷ついて起こる「ビリビリ」「ジンジン」する痛みに効く薬です。ふつうの痛み止めが効きにくいしびれに使います。',
+    howItWorks: '興奮しすぎた神経の伝わりを落ち着かせます。',
+    schedule: '少ない量から始めて、様子を見ながら増やします。1日2回飲みます。',
+    cautions: [
+      'めまい・ふらつき・眠気が出ることがあります。とくに飲み始めと増量時は、車の運転を控えてください。',
+      '高齢の方は転倒に注意してください。',
+      '足のむくみ・体重増加が出ることがあります。',
+      '自分の判断で急にやめないでください。少しずつ減らします。',
+    ],
+    clinicalNote:
+      '神経障害性疼痛に対して使用。腎機能に応じて減量する。高齢者では低用量から開始し、めまい・傾眠・転倒リスクを必ず説明する。漫然投与を避け、効果がなければ中止する。',
+    costHint: '3割負担で月およそ1,500〜4,000円',
+    sources: ['lss-gl-2021', 'ldh-gl-2021'],
+  },
+  {
+    id: 'mecobalamin',
+    generic: 'メコバラミン（ビタミンB12）',
+    brands: ['メチコバール'],
+    cls: 'mecobalamin',
+    disease: ['lumbarStenosis', 'cervicalRadiculopathy', 'lumbarDiscHernia'],
+    route: '内服（1日3回）',
+    plain: '傷んだ神経の回復を助けるビタミンです。',
+    howItWorks: '神経を包むさやの材料になり、神経の修復を助けます。',
+    schedule: '1日3回、食後に飲みます。',
+    cautions: ['副作用は少ない薬です。', 'これだけで症状がなくなるわけではないため、運動療法と一緒に行います。'],
+    clinicalNote: '末梢神経障害に対する補助的治療。単独での効果は限定的であり、他治療との併用で用いる。',
+    costHint: '3割負担で月およそ300〜600円',
+    sources: ['csr-ref'],
+  },
+  {
+    id: 'tramadol',
+    generic: 'トラマドール（配合剤を含む）',
+    brands: ['トラムセット', 'ツートラム'],
+    cls: 'tramadol',
+    disease: ['lumbarStenosis', 'lumbarDiscHernia', 'hipOA', 'kneeOA', 'vertebralFracture'],
+    route: '内服（1日2〜4回）',
+    plain: 'ふつうの痛み止めで足りないときに使う、少し強い痛み止めです。',
+    howItWorks: '脳と脊髄で、痛みの信号が伝わるのを抑えます。',
+    schedule: '少ない量から始めます。決められた時間に飲んでください。',
+    cautions: [
+      '吐き気・便秘・眠気が出やすい薬です。吐き気止め・便秘薬を一緒に使うことがあります。',
+      '飲み始めは、車の運転を控えてください。',
+      '自分の判断で急にやめないでください。',
+      'お酒と一緒に飲まないでください。',
+    ],
+    clinicalNote:
+      '非オピオイド鎮痛薬で不十分な中等度以上の疼痛に。悪心・便秘対策を同時に開始する。長期漫然投与を避け、目標（動けること）を決めて期間限定で使う。',
+    costHint: '3割負担で月およそ1,500〜3,000円',
+    sources: ['lbp-gl-2019', 'knee-gl-2023'],
+  },
+  {
+    id: 'eperisone',
+    generic: '筋弛緩薬（エペリゾンなど）',
+    brands: ['ミオナール', 'テルネリン'],
+    cls: 'muscle-relaxant',
+    disease: ['cervicalRadiculopathy', 'lumbarStenosis', 'lumbarDiscHernia'],
+    route: '内服（1日3回）',
+    plain: 'こわばった筋肉をゆるめて、痛みをやわらげる薬です。',
+    howItWorks: '筋肉の過剰な緊張を、脊髄のレベルでゆるめます。',
+    schedule: '1日3回、食後に飲みます。',
+    cautions: ['眠気・ふらつきが出ることがあります。', '肝機能の数値が上がることがあり、長く飲むときは血液検査をします。'],
+    clinicalNote: '筋緊張が疼痛に寄与している例で短期使用。眠気・肝障害に注意し、漫然投与しない。',
+    costHint: '3割負担で月およそ300〜900円',
+    sources: ['lbp-gl-2019'],
+  },
+  {
+    id: 'steroid-injection',
+    generic: 'ステロイド局所注射',
+    brands: ['ケナコルト', 'デカドロン', 'リンデロン'],
+    cls: 'steroid-injection',
+    disease: ['frozenShoulder', 'triggerFinger', 'tennisElbow', 'plantarFasciitis', 'hipOA'],
+    route: '注射（関節内・腱鞘内・患部）',
+    plain: '炎症を抑える薬を、痛みの原因になっている場所に直接注射します。よく効きますが、回数には制限があります。',
+    howItWorks: 'その場所の炎症を強く抑えます。',
+    schedule: '効果は数日〜2週間で出て、数週間〜数か月続きます。',
+    cautions: [
+      '注射のあと1〜2日、かえって痛むことがあります（後出血・注射後増悪）。',
+      '糖尿病のある方は、数日間血糖値が上がることがあります。',
+      '同じ場所への注射をくり返すと、腱が弱くなることがあります。回数と間隔を守ります。',
+      '注射したところが赤く腫れて熱をもったら、すぐご連絡ください（感染の可能性）。',
+    ],
+    clinicalNote:
+      '腱鞘内・関節内注射は短期的な疼痛改善に有効。反復投与は腱断裂・皮下脂肪萎縮のリスクがあるため回数を管理する。外側上顆炎では中長期予後がむしろ不良との報告があり、適応を絞る。糖尿病例では血糖上昇を必ず説明する。',
+    costHint: '3割負担で1回およそ300〜900円（+ 手技料）',
+    sources: ['shoulder-ref', 'hand-ref', 'elbow-ref'],
+  },
+]

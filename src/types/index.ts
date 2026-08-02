@@ -9,7 +9,33 @@
 
 // ---------------------------------------------------------------- 共通
 
-export type DiseaseKey = 'osteoporosis' | 'ra' | 'kneeOA'
+/**
+ * 症状別の運動器疾患。
+ *
+ * 骨粗鬆症・関節リウマチ・変形性膝関節症の3つは、検査値や関節数から
+ * ガイドラインの基準を機械的に当てはめる「判定ロジック」が中心のため、
+ * 専用の入力・判定・スライドを持つ。
+ *
+ * 一方、外来で頻度の高い下記の疾患は、
+ *  ・診断は病歴と身体所見（徒手検査）でほぼ決まる
+ *  ・説明の中身は「何が起きているか／どのくらいで治るか／何をすればよいか」で共通
+ * という性質があるため、宣言的な疾患モデル（data/conditions）で表現し、
+ * 入力画面・説明スライド・パンフレットを共通の仕組みで生成する。
+ */
+export type ConditionKey =
+  | 'lumbarStenosis' // 腰部脊柱管狭窄症
+  | 'lumbarDiscHernia' // 腰椎椎間板ヘルニア
+  | 'cervicalRadiculopathy' // 頚椎症性神経根症
+  | 'plantarFasciitis' // 足底腱膜炎（足底筋膜炎）
+  | 'tennisElbow' // 上腕骨外側上顆炎（テニス肘）
+  | 'frozenShoulder' // 肩関節周囲炎（五十肩）
+  | 'triggerFinger' // 狭窄性腱鞘炎（ばね指）
+  | 'hipOA' // 変形性股関節症
+  | 'vertebralFracture' // 脊椎圧迫骨折
+  | 'ankleSprain' // 足関節外側側副靱帯損傷
+  | 'muscleStrain' // 肉離れ（筋挫傷）
+
+export type DiseaseKey = 'osteoporosis' | 'ra' | 'kneeOA' | ConditionKey
 
 export type Sex = 'female' | 'male'
 
@@ -311,6 +337,112 @@ export interface LocomoAssessment {
   advice: string[]
 }
 
+// ---------------------------------------------------------------- 症状別疾患（共通モデル）
+
+export type BodySide = 'left' | 'right' | 'both' | null
+
+/**
+ * 症状別疾患の入力。
+ *
+ * どの疾患でも「どこが・どのくらい痛くて・いつからで・どんな所見か」は共通なので、
+ * 器（この型）は1つにして、選択肢の中身だけを疾患モデル側で定義する。
+ * これにより疾患を増やしても入力画面・カルテ文・パンフレットのコードは増えない。
+ */
+export interface ConditionInput {
+  side: BodySide
+  /** 痛みの強さ NRS 0-10 */
+  painNrs: number | null
+  /** 発症からの期間（選択肢のID） */
+  duration: string | null
+  /** 発症のしかた */
+  onset: 'sudden' | 'gradual' | null
+  /** 当てはまる症状（疾患モデルの symptomOptions のID） */
+  symptoms: string[]
+  /** 診察所見・徒手検査（疾患モデルの findingOptions のID） */
+  findings: string[]
+  /** レッドフラッグ（該当すると警告と紹介提案を出す） */
+  redFlags: string[]
+  /** 病期・重症度（疾患モデルの stages のID） */
+  stage: string | null
+  /**
+   * 疾患ごとの数値（歩ける距離、可動域など）。
+   * キーは疾患モデルの metrics で定義する。
+   */
+  metrics: Record<string, number | null>
+  /** これまでに受けた治療（疾患モデルの priorTreatmentOptions のID） */
+  priorTreatments: string[]
+  /** 医師のメモ（カルテ記載に載せる） */
+  note: string
+}
+
+/** 選択肢（症状・所見・レッドフラッグ共通） */
+export interface ConditionOption {
+  id: string
+  /** 患者さんにも通じる表現 */
+  label: string
+  /** 医師向けの補足（徒手検査の正式名称など）。画面では小さく出す */
+  hint?: string
+}
+
+export interface ConditionMetricSpec {
+  key: string
+  label: string
+  unit: string
+  step?: number
+  min?: number
+  max?: number
+  hint?: string
+}
+
+export interface ConditionStage {
+  id: string
+  label: string
+  detail: string
+}
+
+/** 段階的治療の1段（下から積み上げる） */
+export interface TreatmentStep {
+  /** 見出し（患者さん向け） */
+  title: string
+  /** 何をするか */
+  points: string[]
+  /** 医師向けの補足 */
+  note?: string
+  /** この段でよく使う薬剤ID（data/drugs.ts） */
+  drugIds?: string[]
+}
+
+/** 回復の見通しを時間軸で示すための1区間 */
+export interface CoursePhase {
+  /** 期間のラベル（例：「0〜2週」） */
+  period: string
+  /** その時期の状態 */
+  state: string
+  /** その時期にやること */
+  todo: string
+  /** 痛みの目安（0〜1。図の高さに使う） */
+  painLevel: number
+}
+
+export interface ConditionAssessment {
+  /** 該当したレッドフラッグ（患者向け表現） */
+  redFlags: string[]
+  /** 医師が今日判断すべきこと */
+  actions: string[]
+  /** 紹介・精査を検討すべきか */
+  referralSuggested: boolean
+  /** 提案する治療の段（1始まり、TreatmentStep の index+1） */
+  suggestedStep: number
+  /** 提案の理由 */
+  suggestedStepReasons: string[]
+  /** 痛みの区分 */
+  painBand: 'none' | 'mild' | 'moderate' | 'severe' | 'unknown'
+  /** 陽性となった所見のラベル */
+  positiveFindings: string[]
+  /** 画面と記録に出す注意事項 */
+  cautions: string[]
+}
+
 // ---------------------------------------------------------------- 薬剤マスタ
 
 export type DrugClass =
@@ -331,6 +463,13 @@ export type DrugClass =
   | 'acetaminophen'
   | 'duloxetine'
   | 'ha-injection'
+  | 'steroid-injection'
+  | 'neurotropin'
+  | 'mecobalamin'
+  | 'limaprost'
+  | 'pregabalin'
+  | 'tramadol'
+  | 'muscle-relaxant'
   | 'other'
 
 export interface DrugInfo {
@@ -372,6 +511,10 @@ export type ExerciseCategory =
   | 'rom' // 関節可動域
   | 'jointProtection' // 関節保護・ADL指導
   | 'aquatic' // 水中運動
+  | 'stretch' // ストレッチ
+  | 'stabilization' // 体幹・関節の安定化
+  | 'eccentric' // 遠心性（エキセントリック）収縮
+  | 'nerveGlide' // 神経・腱の滑走
 
 export interface ExerciseItem {
   id: string
@@ -411,6 +554,32 @@ export type ExerciseFigureKey =
   | 'shoulderPulley'
   | 'jointProtect'
   | 'aquatic'
+  // ---- 腰・体幹
+  | 'drawIn'
+  | 'kneeToChest'
+  | 'catCamel'
+  | 'hamstringStretch'
+  | 'mckenzieExtension'
+  | 'hipFlexorStretch'
+  // ---- 頚・肩
+  | 'chinTuck'
+  | 'neckIsometric'
+  | 'scapularSqueeze'
+  | 'pendulum'
+  | 'wallWalk'
+  | 'crossBodyStretch'
+  | 'externalRotation'
+  // ---- 肘・手
+  | 'wristExtStretch'
+  | 'eccentricWrist'
+  | 'tendonGlide'
+  // ---- 足
+  | 'plantarStretch'
+  | 'calfStretch'
+  | 'towelGather'
+  | 'ankleEversionBand'
+  // ---- スポーツ
+  | 'nordicHamstring'
 
 /** 実際に患者へ渡す運動処方 */
 export interface ExercisePrescriptionItem {
@@ -477,6 +646,8 @@ export interface Session {
   ra: RaInput
   knee: KneeInput
   locomo: LocomoInput
+  /** 症状別疾患（腰・首・肩・肘・指・股・足・外傷）の入力 */
+  condition: ConditionInput
   plan: TreatmentPlan
   /** 説明モードで実際に見せたスライドID（記録用） */
   shownSlideIds: string[]

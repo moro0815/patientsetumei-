@@ -3,6 +3,7 @@ import type { Slide } from './types'
 import { buildOsteoSlides } from './osteoSlides'
 import { buildRaSlides } from './raSlides'
 import { buildKneeSlides } from './kneeSlides'
+import { buildConditionSlides } from './conditionSlides'
 
 export type { Slide } from './types'
 
@@ -15,7 +16,8 @@ export function getSlides(session: Session): Slide[] {
     case 'kneeOA':
       return buildKneeSlides(session)
     default:
-      return []
+      // 症状別疾患は、宣言的な疾患モデルからスライドを生成する
+      return buildConditionSlides(session)
   }
 }
 

@@ -1,4 +1,5 @@
-import type { DrugInfo } from '@/types'
+import { DRUGS_CONDITION } from './drugs2'
+import type { DiseaseKey, DrugInfo } from '@/types'
 
 /**
  * 薬剤マスタ
@@ -557,14 +558,17 @@ export const DRUGS: DrugInfo[] = [
   },
 ]
 
-const drugById = new Map(DRUGS.map((d) => [d.id, d]))
+/** 骨粗鬆症・RA・膝OA の薬に、症状別疾患の薬を加えた1本のマスタ */
+export const ALL_DRUGS: DrugInfo[] = [...DRUGS, ...DRUGS_CONDITION]
+
+const drugById = new Map(ALL_DRUGS.map((d) => [d.id, d]))
 
 export function getDrug(id: string): DrugInfo | undefined {
   return drugById.get(id)
 }
 
-export function drugsForDisease(disease: 'osteoporosis' | 'ra' | 'kneeOA'): DrugInfo[] {
-  return DRUGS.filter((d) => d.disease.includes(disease))
+export function drugsForDisease(disease: DiseaseKey): DrugInfo[] {
+  return ALL_DRUGS.filter((d) => d.disease.includes(disease))
 }
 
 /** 骨吸収抑制薬（歯科連携が必要な薬）か */

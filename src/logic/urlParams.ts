@@ -1,4 +1,5 @@
 import type { DiseaseKey, Session } from '@/types'
+import { CONDITIONS } from '@/data/conditions'
 import { createSession } from '@/state/session'
 
 /**
@@ -37,6 +38,13 @@ const DISEASE_ALIAS: Record<string, DiseaseKey> = {
   kneeoa: 'kneeOA',
   locomo: 'kneeOA',
   膝: 'kneeOA',
+  // 症状別疾患（キーそのものと、よく使われる略称）
+  ...(Object.fromEntries(
+    CONDITIONS.flatMap((c) => [
+      [c.key.toLowerCase(), c.key],
+      ...c.aka.map((a) => [a.toLowerCase(), c.key]),
+    ]),
+  ) as Record<string, DiseaseKey>),
 }
 
 interface ParamDef {
@@ -170,6 +178,9 @@ export function buildSampleUrl(base: string, disease: DiseaseKey): string {
       return `${b}/?d=op&chart=012345&age=76&sex=f&height=148&weight=46&lyam=64&fyam=62`
     case 'kneeOA':
       return `${b}/?d=knee&chart=012345&age=70&sex=f&height=158&weight=70&kl=3&nrs=6`
+    default:
+      // 症状別疾患は、疾患キーと患者基本情報・痛みのNRSを渡せる
+      return `${b}/?d=${disease}&chart=012345&age=62&sex=f&nrs=6`
   }
 }
 

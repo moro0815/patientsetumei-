@@ -5,6 +5,8 @@ import { assessOsteoporosis, fmtT, suggestInitialTherapy } from '@/logic/osteopo
 import { ACTIVITY_LABEL, assessRa, das28crpRefLabel } from '@/logic/ra'
 import { assessLocomo, bmiCategory, calcBmi, kneeSummary, weightTarget } from '@/logic/locomo'
 import { citeLabel } from '@/data/sources'
+import { getCondition } from '@/data/conditions'
+import { assessCondition, PAIN_BAND_LABEL, sideLabel } from '@/logic/condition'
 
 /**
  * 入力に応じてリアルタイムに判定を表示するパネル（医師向け）。
@@ -16,7 +18,129 @@ export function AssessmentPanel() {
 
   if (disease === 'osteoporosis') return <OsteoAssessment />
   if (disease === 'ra') return <RaAssessment />
-  return <KneeAssessment key={patient.visitDate} />
+  if (disease === 'kneeOA') return <KneeAssessment key={patient.visitDate} />
+  return <ConditionAssessment />
+}
+
+/**
+ * 症状別疾患の判定パネル。
+ * 「見落としてはいけないもの」を最上部に置き、次に治療の段の提案を出す。
+ */
+function ConditionAssessment() {
+  const { session } = useStore()
+  const def = getCondition(session.disease)
+  const c = session.condition
+  const a = useMemo(() => assessCondition(c, def), [c, def])
+  if (!def) return null
+
+  const stepTitle = def.treatments[a.suggestedStep - 1]?.title ?? ''
+
+  return (
+    <div className="space-y-4">
+      {a.redFlags.length > 0 && (
+        <Banner tone="warn" title="⚠ 緊急性のある所見があります" icon="⚠">
+          <ul className="list-disc space-y-1 pl-5 font-bold">
+            {a.redFlags.map((f, i) => (
+              <li key={i}>{f}</li>
+            ))}
+          </ul>
+          <p className="mt-2">画像評価と専門医への紹介を、今日のうちに検討してください。</p>
+        </Banner>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <StatCard
+          label="痛みの強さ"
+          value={c.painNrs !== null ? `${c.painNrs} / 10` : '—'}
+          sub={PAIN_BAND_LABEL[a.painBand]}
+          tone={a.painBand === 'severe' ? 'warn' : a.painBand === 'none' ? 'good' : 'neutral'}
+        />
+        <StatCard
+          label="部位・経過"
+          value={[sideLabel(c.side), def.duration.find((d) => d.id === c.duration)?.label].filter(Boolean).join(' ') || '—'}
+          sub={def.stages?.find((s) => s.id === c.stage)?.label}
+        />
+        <StatCard
+          label="次に検討する治療"
+          value={`第${a.suggestedStep}段`}
+          sub={stepTitle}
+          tone={a.referralSuggested ? 'warn' : 'neutral'}
+        />
+      </div>
+
+      <div className="rounded-xl border-2 border-brand-200 bg-white p-4">
+        <p className="mb-2 text-sm font-bold text-brand-800">治療の段（下から積み上げます）</p>
+        <ol className="space-y-1.5">
+          {def.treatments.map((t, i) => {
+            const on = i + 1 === a.suggestedStep
+            return (
+              <li key={t.title} className={`flex gap-2 text-sm ${on ? 'font-bold text-brand-700' : 'text-ink-soft'}`}>
+                <span
+                  className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold ${
+                    on ? 'bg-brand-600 text-white' : 'bg-slate-200 text-ink-mute'
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span>
+                  {t.title}
+                  {on && <span className="ml-1.5 badge bg-brand-100 text-brand-700">提案</span>}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+        <ul className="mt-2 space-y-0.5 text-xs text-ink-mute">
+          {a.suggestedStepReasons.map((r, i) => (
+            <li key={i}>・{r}</li>
+          ))}
+        </ul>
+      </div>
+
+      {a.positiveFindings.length > 0 && (
+        <div className="rounded-xl border-2 border-slate-200 bg-white p-4">
+          <p className="mb-1.5 text-sm font-bold text-ink">確認できた所見</p>
+          <div className="flex flex-wrap gap-1.5">
+            {a.positiveFindings.map((f, i) => (
+              <Badge key={i} tone="info">
+                {f}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {a.cautions.length > 0 && (
+        <Banner tone="warn" title="留意事項" icon="!">
+          <ul className="list-disc space-y-1 pl-5">
+            {a.cautions.map((x, i) => (
+              <li key={i}>{x}</li>
+            ))}
+          </ul>
+        </Banner>
+      )}
+
+      {a.actions.length > 0 && (
+        <Banner tone="neutral" title="入力しておくと役立つこと" icon="✎">
+          <ul className="list-disc space-y-1 pl-5">
+            {a.actions.map((x, i) => (
+              <li key={i}>{x}</li>
+            ))}
+          </ul>
+        </Banner>
+      )}
+
+      <DoctorNote label="検査の考え方">
+        <ul className="list-disc space-y-1 pl-5 text-sm">
+          {def.workup.map((w, i) => (
+            <li key={i}>{w}</li>
+          ))}
+        </ul>
+      </DoctorNote>
+
+      <Cite>{citeLabel(def.sources)}</Cite>
+    </div>
+  )
 }
 
 function OsteoAssessment() {

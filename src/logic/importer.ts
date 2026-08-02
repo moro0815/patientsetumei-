@@ -448,7 +448,7 @@ export function applyParsedFields(session: Session, fields: ParsedField[]): Sess
 /** その疾患の画面で意味のある項目だけに絞る（確認画面の見通しをよくする） */
 export function fieldsForDisease(fields: ParsedField[], disease: Session['disease']): ParsedField[] {
   const common: ImportKey[] = ['chartNo', 'displayName', 'age', 'sex', 'heightCm', 'weightKg']
-  const byDisease: Record<Session['disease'], ImportKey[]> = {
+  const byDisease: Partial<Record<Session['disease'], ImportKey[]>> = {
     osteoporosis: [
       ...common, 'maxHeightCm', 'lumbarYam', 'femurYam', 'lumbarT', 'femurT',
       'fraxMajorPercent', 'fraxHipPercent', 'calcium', 'vitD25', 'tracp5b', 'p1np', 'egfr',
@@ -459,6 +459,7 @@ export function fieldsForDisease(fields: ParsedField[], disease: Session['diseas
     ],
     kneeOA: [...common, 'klGrade', 'painNrs', 'locomo25', 'twoStepValue'],
   }
-  const allowed = new Set(byDisease[disease])
+  // 症状別疾患は、基本情報と痛みのNRSだけを取り込む（それ以外は診察所見で入れる）
+  const allowed = new Set(byDisease[disease] ?? [...common, 'painNrs'])
   return fields.filter((f) => allowed.has(f.key))
 }

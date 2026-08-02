@@ -1,4 +1,5 @@
-import type { FeeItem, LabOrderItem } from '@/types'
+import { FEE_ITEMS_CONDITION, LAB_ORDERS_CONDITION } from './fees2'
+import type { DiseaseKey, FeeItem, LabOrderItem } from '@/types'
 
 /**
  * 診療報酬・算定候補マスタ
@@ -203,8 +204,11 @@ export const FEE_ITEMS: FeeItem[] = [
   },
 ]
 
-export function feesForDisease(disease: 'osteoporosis' | 'ra' | 'kneeOA'): FeeItem[] {
-  return FEE_ITEMS.filter((f) => f.disease.includes(disease))
+/** 3疾患と症状別疾患をまとめた算定候補マスタ */
+export const ALL_FEE_ITEMS: FeeItem[] = [...FEE_ITEMS, ...FEE_ITEMS_CONDITION]
+
+export function feesForDisease(disease: DiseaseKey): FeeItem[] {
+  return ALL_FEE_ITEMS.filter((f) => f.disease.includes(disease))
 }
 
 // ================================================================ 検査オーダー
@@ -328,6 +332,14 @@ export const LAB_ORDERS: LabOrderItem[] = [
   },
 ]
 
-export function labsForDisease(disease: 'osteoporosis' | 'ra' | 'kneeOA'): LabOrderItem[] {
-  return LAB_ORDERS.filter((l) => l.disease.includes(disease))
+/** 3疾患と症状別疾患をまとめた検査候補マスタ */
+export const ALL_LAB_ORDERS: LabOrderItem[] = [...LAB_ORDERS, ...LAB_ORDERS_CONDITION]
+
+export function labsForDisease(disease: DiseaseKey): LabOrderItem[] {
+  return ALL_LAB_ORDERS.filter((l) => l.disease.includes(disease))
+}
+
+/** IDから検査を引く（疾患モデルの labIds で使う） */
+export function getLabOrder(id: string): LabOrderItem | undefined {
+  return ALL_LAB_ORDERS.find((l) => l.id === id)
 }

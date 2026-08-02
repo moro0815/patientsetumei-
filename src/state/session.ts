@@ -1,4 +1,5 @@
 import type { ClinicalSettings, DiseaseKey, Session, ViewSettings } from '@/types'
+import { CONDITIONS, emptyConditionInput } from '@/data/conditions'
 
 /**
  * 診察1件分の状態（セッション）
@@ -111,6 +112,7 @@ export function createSession(disease: DiseaseKey = 'osteoporosis'): Session {
       twoStepValue: null,
       locomo25: null,
     },
+    condition: emptyConditionInput(),
     plan: {
       drugIds: [],
       exercisePathway: [],
@@ -167,6 +169,11 @@ export function loadDraft(): Session | null {
       },
       knee: { ...base.knee, ...parsed.knee },
       locomo: { ...base.locomo, ...parsed.locomo },
+      condition: {
+        ...base.condition,
+        ...parsed.condition,
+        metrics: { ...base.condition.metrics, ...parsed.condition?.metrics },
+      },
       plan: { ...base.plan, ...parsed.plan },
       view: { ...base.view, ...parsed.view },
       clinicalSettings: { ...base.clinicalSettings, ...parsed.clinicalSettings },
@@ -208,14 +215,28 @@ export function saveViewSettings(v: ViewSettings): void {
 
 // ---------------------------------------------------------------- ラベル
 
-export const DISEASE_LABEL: Record<DiseaseKey, string> = {
+const CORE_LABEL = {
   osteoporosis: '骨粗鬆症',
   ra: '関節リウマチ',
   kneeOA: '変形性膝関節症・ロコモ',
-}
+} as const
 
-export const DISEASE_SUBLABEL: Record<DiseaseKey, string> = {
+const CORE_SUBLABEL = {
   osteoporosis: '骨密度・骨折リスク・骨を強くする治療',
   ra: '関節の炎症・T2T・抗リウマチ薬',
   kneeOA: '膝の痛み・歩く力・運動療法',
+} as const
+
+/**
+ * 疾患名は、専用ロジックを持つ3疾患と、宣言的モデルで定義した症状別疾患を
+ * 1つの表にまとめる。疾患を増やしても data/conditions に足すだけで反映される。
+ */
+export const DISEASE_LABEL: Record<DiseaseKey, string> = {
+  ...CORE_LABEL,
+  ...(Object.fromEntries(CONDITIONS.map((c) => [c.key, c.label])) as Record<DiseaseKey, string>),
+}
+
+export const DISEASE_SUBLABEL: Record<DiseaseKey, string> = {
+  ...CORE_SUBLABEL,
+  ...(Object.fromEntries(CONDITIONS.map((c) => [c.key, c.subLabel])) as Record<DiseaseKey, string>),
 }

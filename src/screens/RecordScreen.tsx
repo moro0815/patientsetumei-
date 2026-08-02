@@ -4,6 +4,7 @@ import { Badge, Banner, CopyButton, Section } from '@/components/ui'
 import { buildKarte, buildPrescriptionText, buildQuickSummary, buildValuesLine } from '@/logic/karte'
 import { FEE_MASTER_VERIFIED_AT } from '@/data/fees'
 import { citeLabel } from '@/data/sources'
+import { getCondition } from '@/data/conditions'
 
 /**
  * STEP 5：診療記録と算定候補
@@ -249,7 +250,7 @@ export function RecordScreen() {
         </Section>
 
         <p className="text-xs leading-relaxed text-ink-mute">
-          出典：{citeLabel(['mhlw-fee-r8', 'op-gl-2025', 'ra-gl-2024', 'knee-gl-2023', 'fls-standard'])}
+          出典：{citeLabel(['mhlw-fee-r8', ...(getCondition(session.disease)?.sources ?? ['op-gl-2025', 'ra-gl-2024', 'knee-gl-2023', 'fls-standard'])])}
         </p>
       </div>
     </div>
