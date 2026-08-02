@@ -501,6 +501,85 @@ function TendonGlide() {
   )
 }
 
+/**
+ * 親指の腱すべり運動。
+ *
+ * 手を親指側から見た形（母指が上）で3つの動きを並べる。
+ * この運動でいちばん伝えたいのは可動の大きさではなく
+ * 「痛みの手前で止める」ことなので、注意書きを図の中に赤で残す。
+ */
+function ThumbGlide() {
+  /** 各コマ。原点は母指のつけ根（CM関節）に置く */
+  const panels = [
+    {
+      cx: 42,
+      lines: ['①親指を', '広げる'],
+      thumb: 'M0 30 L-24 8',
+      arrow: 'M-8 46 Q-26 34 -26 14',
+      wrist: false,
+    },
+    {
+      cx: 118,
+      lines: ['②手のひら側', 'へ倒す'],
+      thumb: 'M0 28 L-16 52',
+      arrow: 'M-24 14 Q-34 34 -22 52',
+      wrist: false,
+    },
+    {
+      cx: 190,
+      lines: ['③手首を', '左右へ倒す'],
+      thumb: 'M0 26 L-14 6',
+      arrow: null,
+      wrist: true,
+    },
+  ]
+
+  return (
+    <Frame
+      title="親指の腱すべり運動"
+      desc="ひじを机につけ手を立てて、親指を広げる・手のひら側へ倒す・手首を左右へ倒す、の3つをゆっくり行う。"
+      caption="各5秒 × 5回／1日3〜4回"
+    >
+      <Note x={14} y={20} lines={['ひじを机につけ、手を立てて（親指が上）']} />
+
+      {panels.map((p) => (
+        <g key={p.lines[0]} transform={`translate(${p.cx},34)`}>
+          {/* 前腕（机についているところ） */}
+          <rect x={3} y={58} width={22} height={38} rx={7} fill={PALETTE.bg} stroke={PALETTE.line} strokeWidth={2} />
+          {/* 手のひら（指は握らず、親指側から見た形） */}
+          <rect x={-2} y={2} width={30} height={58} rx={13} fill={PALETTE.bg} stroke={PALETTE.ink} strokeWidth={2.5} />
+          {/* 指のすじ */}
+          <path d="M6 18 L22 18 M6 30 L22 30 M6 42 L22 42" stroke={PALETTE.line} strokeWidth={1.6} />
+          {/* 親指 */}
+          <path d={p.thumb} stroke={PALETTE.ink} strokeWidth={7} strokeLinecap="round" />
+          {/* 動かす向き */}
+          {p.arrow && (
+            <path d={p.arrow} fill="none" stroke={PALETTE.brandMid} strokeWidth={3} markerEnd="url(#ex2Arr)" />
+          )}
+          {p.wrist && (
+            <>
+              <path d="M-4 76 Q-16 70 -20 58" fill="none" stroke={PALETTE.brandMid} strokeWidth={3} markerEnd="url(#ex2Arr)" />
+              <path d="M32 76 Q42 70 44 58" fill="none" stroke={PALETTE.brandMid} strokeWidth={3} markerEnd="url(#ex2Arr)" />
+            </>
+          )}
+          {p.lines.map((l, li) => (
+            <text key={l} x={13} y={116 + li * 13} textAnchor="middle" fontSize="10" fontWeight="700" fill={PALETTE.inkSoft}>
+              {l}
+            </text>
+          ))}
+        </g>
+      ))}
+
+      <text x={120} y={182} textAnchor="middle" fontSize="10.5" fontWeight="700" fill={PALETTE.warn}>
+        痛みが走る手前で止めます
+      </text>
+      <text x={120} y={195} textAnchor="middle" fontSize="10.5" fontWeight="700" fill={PALETTE.warn}>
+        強く伸ばすと、かえって腫れます
+      </text>
+    </Frame>
+  )
+}
+
 // ================================================================ 足
 
 function PlantarStretch() {
@@ -655,6 +734,7 @@ export const EXERCISE2_MAP: Partial<Record<ExerciseFigureKey, () => ReactElement
   wristExtStretch: WristExtStretch,
   eccentricWrist: EccentricWrist,
   tendonGlide: TendonGlide,
+  thumbGlide: ThumbGlide,
   plantarStretch: PlantarStretch,
   calfStretch: CalfStretch,
   towelGather: TowelGather,

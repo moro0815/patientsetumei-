@@ -301,7 +301,7 @@ export const EXERCISES_CONDITION: ExerciseItem[] = [
     name: '手首を反らす筋肉のストレッチ',
     shortName: '前腕のばし',
     category: 'stretch',
-    disease: ['tennisElbow'],
+    disease: ['tennisElbow', 'deQuervain'],
     level: 'sitting',
     steps: [
       'ひじをまっすぐ伸ばし、手のひらを下に向けます。',
@@ -359,6 +359,30 @@ export const EXERCISES_CONDITION: ExerciseItem[] = [
     figure: 'tendonGlide',
     clinicalNote: '屈筋腱の滑走訓練。腱鞘内での癒着を防ぎ、注射後の再発予防としても指導する。',
     sources: ['hand-ref'],
+  },
+  {
+    id: 'thumb-glide',
+    name: '親指の腱すべり運動',
+    shortName: '親指のすべり運動',
+    category: 'nerveGlide',
+    disease: ['deQuervain'],
+    level: 'sitting',
+    steps: [
+      'ひじを机につけ、手を立てて（親指が上）構えます。',
+      '親指をゆっくり大きく広げ、5秒止めます。痛みが出る手前で止めてください。',
+      '次に親指を手のひら側へ倒し、小指の付け根に近づけて5秒止めます。',
+      '最後に手首をゆっくり親指側・小指側へ倒します。各5回くり返します。',
+    ],
+    dose: { reps: '各5秒 × 5回', sets: '1セット', frequency: '1日3〜4回' },
+    stopRules: [
+      '痛みが走る手前で止めてください。強く伸ばすと、かえって腫れます。',
+      '装具をつけている時期でも、1日に数回は外して行ってください。',
+      '注射のあと2〜3日は、力を入れる動作を避けてください。',
+    ],
+    figure: 'thumbGlide',
+    clinicalNote:
+      '第1区画（APL・EPB）の腱滑走訓練。固定期間中の拘縮と癒着を防ぐ。可動域の範囲内で行い、Finkelstein肢位での強いストレッチは急性期には行わない。',
+    sources: ['dequervain-ref'],
   },
 
   // ============================================================ 足
@@ -539,6 +563,18 @@ export const RECOMMENDED_SETS_CONDITION: Record<string, { label: string; ids: st
       label: '基本セット',
       ids: ['tendon-glide', 'hand-rom'],
       note: '腱の滑走を保ちます。引っかかるところで無理に伸ばさないよう必ず実演してください。',
+    },
+  ],
+  deQuervain: [
+    {
+      label: '基本セット（装具と併せて）',
+      ids: ['thumb-glide', 'hand-rom'],
+      note: '固定による拘縮を防ぐための滑走運動です。痛みの手前で止めることを必ず実演してください。',
+    },
+    {
+      label: '痛みが引いてきたら',
+      ids: ['thumb-glide', 'wrist-ext-stretch', 'grip-isometric'],
+      note: '前腕の柔軟性と握力を戻します。抱っこ・家事の負担に耐えられる状態を目標にします。',
     },
   ],
   hipOA: [

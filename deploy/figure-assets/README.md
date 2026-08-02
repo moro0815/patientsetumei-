@@ -23,7 +23,7 @@
 
 ### 差し替えできる図（静止した解剖図）
 
-**12点**あります。ここを差し替えるだけで印象は大きく変わります。
+**13点**あります。ここを差し替えるだけで印象は大きく変わります。
 
 | # | いまの図 | ファイル | 必要な解剖 |
 | --- | --- | --- | --- |
@@ -37,8 +37,9 @@
 | 8 | 肩関節包の拘縮 | `figures/upperlimb.tsx` `FrozenShoulderFigure` | 肩関節の冠状断（関節包・腱板） |
 | 9 | テニス肘 | `figures/upperlimb.tsx` `TennisElbowFigure` | 肘外側（外側上顆・手関節伸筋群） |
 | 10 | ばね指 | `figures/upperlimb.tsx` `TriggerFingerFigure` | 手指の屈筋腱と腱鞘（A1プーリー） |
-| 11 | 足底腱膜炎 | `figures/lowerlimb.tsx` `PlantarFasciaFigure` | 足部内側面（踵骨・足底腱膜・アキレス腱） |
-| 12 | 足関節外側の靱帯 | `figures/lowerlimb.tsx` `AnkleLigamentFigure` | 足関節外側（前距腓靱帯・踵腓靱帯） |
+| 11 | ドケルバン腱鞘炎 | `figures/upperlimb.tsx` `DeQuervainFigure` | 手関節橈側（橈骨茎状突起・第1区画・長母指外転筋腱／短母指伸筋腱） |
+| 12 | 足底腱膜炎 | `figures/lowerlimb.tsx` `PlantarFasciaFigure` | 足部内側面（踵骨・足底腱膜・アキレス腱） |
+| 13 | 足関節外側の靱帯 | `figures/lowerlimb.tsx` `AnkleLigamentFigure` | 足関節外側（前距腓靱帯・踵腓靱帯） |
 
 椎間板ヘルニア・変形性股関節症・脊椎圧迫骨折・シンスプリント・膝OA は、
 入力で形が変わるため**下地の骨だけ**を素材に置き換える形になります（後述）。
@@ -66,7 +67,7 @@
 | 腰椎・椎間板 | `lumbar spine`, `intervertebral disc`, `herniated disc` |
 | 肩関節 | `shoulder joint`, `rotator cuff` |
 | 肘 | `elbow`, `epicondyle` |
-| 手・腱 | `hand`, `tendon`, `finger` |
+| 手・腱 | `hand`, `tendon`, `finger`, `wrist`, `thumb` |
 | 股関節 | `hip joint`, `femur`, `pelvis` |
 | 膝 | `knee joint`, `cartilage`, `meniscus` |
 | 足・足関節 | `foot`, `ankle`, `ligament`, `calcaneus` |

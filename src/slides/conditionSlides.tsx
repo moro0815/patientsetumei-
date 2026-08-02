@@ -27,6 +27,7 @@ const SPOT_MAP: Record<ConditionKey, (side: string | null) => BodySpot[]> = {
   frozenShoulder: (s) => [s === 'left' ? 'shoulderL' : 'shoulderR'],
   tennisElbow: (s) => [s === 'left' ? 'elbowL' : 'elbowR'],
   triggerFinger: (s) => [s === 'left' ? 'handL' : 'handR'],
+  deQuervain: (s) => (s === 'both' ? ['handL', 'handR'] : s === 'left' ? ['handL'] : ['handR']),
   hipOA: (s) => (s === 'both' ? ['hipL', 'hipR'] : s === 'left' ? ['hipL'] : ['hipR']),
   plantarFasciitis: (s) => (s === 'both' ? ['heelL', 'heelR'] : s === 'left' ? ['heelL'] : ['heelR']),
   ankleSprain: (s) => [s === 'left' ? 'ankleL' : 'ankleR'],

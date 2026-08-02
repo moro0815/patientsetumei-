@@ -220,7 +220,7 @@ export const LAB_ORDERS: LabOrderItem[] = [
     name: '骨密度測定（DXA：腰椎＋大腿骨近位部）',
     purpose: '診断と治療効果の判定。両部位を測定し低い方の値を採用する。',
     interval: '治療開始後は6〜12か月ごと（保険上は原則4か月に1回まで）',
-    disease: ['osteoporosis'],
+    disease: ['osteoporosis', 'vertebralFracture'],
   },
   {
     id: 'spine-xray',
@@ -242,7 +242,7 @@ export const LAB_ORDERS: LabOrderItem[] = [
     name: '一般血液検査（Ca、P、ALP、Alb、Cr/eGFR、肝機能、血算）',
     purpose: '続発性骨粗鬆症・他疾患の除外、薬剤選択のための腎機能評価。',
     interval: '初回、以後6〜12か月ごと',
-    disease: ['osteoporosis'],
+    disease: ['osteoporosis', 'vertebralFracture'],
   },
   {
     id: 'vitd-level',
@@ -263,9 +263,10 @@ export const LAB_ORDERS: LabOrderItem[] = [
   {
     id: 'ra-initial',
     name: 'RF、抗CCP抗体、MMP-3、CRP、ESR、血算、肝腎機能',
-    purpose: '診断・活動性評価・治療開始前の基礎データ。',
+    purpose:
+      '診断・活動性評価・治療開始前の基礎データ。複数関節の腫脹を伴う腱鞘炎では、関節リウマチの鑑別としても提出する。',
     interval: '初回。以後CRP/ESR/血算/肝腎機能は1〜3か月ごと',
-    disease: ['ra'],
+    disease: ['ra', 'triggerFinger', 'deQuervain'],
   },
   {
     id: 'ra-pretreat-screen',

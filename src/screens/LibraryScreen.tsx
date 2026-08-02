@@ -51,11 +51,14 @@ import {
   VertebralFractureFigure,
 } from '@/components/figures/spine'
 import {
+  DeQuervainFigure,
   FrozenShoulderFigure,
   FrozenShoulderPhaseFigure,
   ShoulderRomFigure,
   TennisElbowFigure,
   TennisElbowLoadFigure,
+  ThumbLoadFigure,
+  ThumbProvocationFigure,
   TriggerFingerFigure,
   TriggerFingerStageFigure,
 } from '@/components/figures/upperlimb'
@@ -328,6 +331,9 @@ function FigureGallery() {
         { name: 'テニス肘で痛む動作', node: <TennisElbowLoadFigure /> },
         { name: 'ばね指（腱と腱鞘）', node: <TriggerFingerFigure stage={2} /> },
         { name: 'ばね指の進み具合', node: <TriggerFingerStageFigure stage={2} /> },
+        { name: 'ドケルバン腱鞘炎（手首の親指側）', node: <DeQuervainFigure swollen /> },
+        { name: 'ドケルバン腱鞘炎の誘発テスト', node: <ThumbProvocationFigure /> },
+        { name: '親指に負担のかかる動作', node: <ThumbLoadFigure /> },
       ],
     },
     {

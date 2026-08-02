@@ -30,6 +30,7 @@ export type ConditionKey =
   | 'tennisElbow' // 上腕骨外側上顆炎（テニス肘）
   | 'frozenShoulder' // 肩関節周囲炎（五十肩）
   | 'triggerFinger' // 狭窄性腱鞘炎（ばね指）
+  | 'deQuervain' // ドケルバン腱鞘炎（狭窄性腱鞘炎・母指／手関節橈側）
   | 'hipOA' // 変形性股関節症
   | 'vertebralFracture' // 脊椎圧迫骨折
   | 'ankleSprain' // 足関節外側側副靱帯損傷
@@ -574,6 +575,7 @@ export type ExerciseFigureKey =
   | 'wristExtStretch'
   | 'eccentricWrist'
   | 'tendonGlide'
+  | 'thumbGlide'
   // ---- 足
   | 'plantarStretch'
   | 'calfStretch'

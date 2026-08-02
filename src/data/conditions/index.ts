@@ -1,7 +1,7 @@
 import type { ConditionKey, DiseaseKey } from '@/types'
 import type { ConditionDef } from './types'
 import { cervicalRadiculopathy, lumbarDiscHernia, lumbarStenosis, vertebralFracture } from './spine'
-import { frozenShoulder, tennisElbow, triggerFinger } from './upperlimb'
+import { deQuervain, frozenShoulder, tennisElbow, triggerFinger } from './upperlimb'
 import { ankleSprain, hipOA, muscleStrain, plantarFasciitis, shinSplints } from './lowerlimb'
 
 export type { ConditionDef } from './types'
@@ -24,6 +24,7 @@ export const CONDITIONS: ConditionDef[] = [
   tennisElbow,
   // 手・指
   triggerFinger,
+  deQuervain,
   // 股・膝
   hipOA,
   // 足

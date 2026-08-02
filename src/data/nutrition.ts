@@ -303,9 +303,16 @@ export const LIFESTYLE_ITEMS: LifestyleItem[] = [
   {
     id: 'load-reduction',
     label: '痛む動作を減らす工夫',
-    disease: ['tennisElbow', 'triggerFinger', 'plantarFasciitis', 'frozenShoulder'],
+    disease: ['tennisElbow', 'triggerFinger', 'deQuervain', 'plantarFasciitis', 'frozenShoulder'],
     detail:
       '物は両手で、体に近づけて持つ。手のひらを上に向けて持つ。同じ動作を長く続けず、こまめに休む。道具の持ち手を太くする。',
+  },
+  {
+    id: 'baby-carry',
+    label: '赤ちゃんの抱き方・持ち方',
+    disease: ['deQuervain'],
+    detail:
+      '親指を立てて脇の下に差し込む抱き方は、いちばん痛む動作です。両手のひら全体で下からすくい上げ、体に密着させて持ちます。授乳のときは腕ではなくクッションで支えます。スマートフォンは片手持ちをやめ、両手で持つか置いて操作します。',
   },
   {
     id: 'sleep-position',
@@ -345,6 +352,7 @@ export const LIFESTYLE_ITEMS: LifestyleItem[] = [
       'tennisElbow',
       'frozenShoulder',
       'triggerFinger',
+      'deQuervain',
       'hipOA',
       'vertebralFracture',
       'ankleSprain',

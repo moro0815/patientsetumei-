@@ -19,6 +19,7 @@ const ALL_CONDITIONS = [
   'tennisElbow',
   'frozenShoulder',
   'triggerFinger',
+  'deQuervain',
   'hipOA',
   'vertebralFracture',
   'ankleSprain',
@@ -48,7 +49,7 @@ export const FEE_ITEMS_CONDITION: FeeItem[] = [
     requirement:
       '注射手技料と薬剤料を分けて算定します。部位（関節腔内／腱鞘内／硬膜外・神経根）で区分が異なります。実施部位と使用薬剤をカルテに記載してください。',
     facilityStandard: '不要（神経ブロックは要件を確認）',
-    disease: ['frozenShoulder', 'triggerFinger', 'tennisElbow', 'plantarFasciitis', 'hipOA', 'lumbarStenosis', 'lumbarDiscHernia', 'cervicalRadiculopathy'],
+    disease: ['frozenShoulder', 'triggerFinger', 'deQuervain', 'tennisElbow', 'plantarFasciitis', 'hipOA', 'lumbarStenosis', 'lumbarDiscHernia', 'cervicalRadiculopathy'],
     meta,
     sources: ['mhlw-fee-r8'],
   },
@@ -61,7 +62,7 @@ export const FEE_ITEMS_CONDITION: FeeItem[] = [
     requirement:
       'コルセット・サポーター・足底板などの治療用装具は、療養費として患者が申請します。医師の意見書（装具装着証明書）が必要です。',
     facilityStandard: '不要',
-    disease: ['vertebralFracture', 'ankleSprain', 'plantarFasciitis', 'lumbarStenosis', 'triggerFinger', 'cervicalRadiculopathy'],
+    disease: ['vertebralFracture', 'ankleSprain', 'plantarFasciitis', 'lumbarStenosis', 'triggerFinger', 'deQuervain', 'cervicalRadiculopathy'],
     meta,
     sources: ['mhlw-fee-r8'],
   },
@@ -85,7 +86,7 @@ export const FEE_ITEMS_CONDITION: FeeItem[] = [
     unit: '1回（要確認）',
     requirement: '実施部位と所見をカルテに記載します。同一月内の算定回数の制限を確認してください。',
     facilityStandard: '不要',
-    disease: ['frozenShoulder', 'tennisElbow', 'triggerFinger', 'ankleSprain', 'muscleStrain', 'plantarFasciitis', 'shinSplints'],
+    disease: ['frozenShoulder', 'tennisElbow', 'triggerFinger', 'deQuervain', 'ankleSprain', 'muscleStrain', 'plantarFasciitis', 'shinSplints'],
     meta,
     sources: ['mhlw-fee-r8'],
   },
@@ -174,6 +175,23 @@ export const LAB_ORDERS_CONDITION: LabOrderItem[] = [
     purpose: '短橈側手根伸筋腱の変性・部分断裂・石灰化の評価。難治例で行う。',
     interval: '難治例',
     disease: ['tennisElbow'],
+  },
+
+  {
+    id: 'wrist-echo',
+    name: '手関節 超音波検査（第1区画）',
+    purpose:
+      '腱鞘の肥厚・腱周囲の液体貯留の確認。注射が無効となる原因である隔壁（短母指伸筋腱の別区画）の有無を評価でき、注射をエコーガイド下で行う際にも用いる。',
+    interval: '診断に迷うとき、注射前、注射が無効だったとき',
+    disease: ['deQuervain'],
+  },
+  {
+    id: 'wrist-xray',
+    name: '手関節・母指 単純X線（正面・側面、必要に応じて舟状骨撮影）',
+    purpose:
+      '母指CM関節症との鑑別、舟状骨骨折の除外。ドケルバン腱鞘炎そのものの診断には不要で、鑑別を要する場合にのみ撮影する。',
+    interval: '外傷歴があるとき、CM関節に圧痛があるとき、非典型例',
+    disease: ['deQuervain'],
   },
 
   // ---------------------------------------------------------------- 下肢

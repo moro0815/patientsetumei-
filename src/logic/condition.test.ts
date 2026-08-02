@@ -198,8 +198,8 @@ describe('表示用の変換', () => {
 })
 
 describe('疾患モデルの登録簿', () => {
-  it('12疾患が登録されている', () => {
-    expect(CONDITIONS).toHaveLength(12)
+  it('13疾患が登録されている', () => {
+    expect(CONDITIONS).toHaveLength(13)
   })
 
   it('キーが重複していない', () => {
@@ -223,6 +223,7 @@ describe('疾患モデルの登録簿', () => {
   it('病名・別名で検索できる', () => {
     expect(searchConditions('五十肩').map((c) => c.key)).toEqual(['frozenShoulder'])
     expect(searchConditions('ばね指').map((c) => c.key)).toEqual(['triggerFinger'])
+    expect(searchConditions('ケルバン').map((c) => c.key)).toEqual(['deQuervain'])
     expect(searchConditions('ヘルニア').map((c) => c.key)).toContain('lumbarDiscHernia')
     expect(searchConditions('かかと').map((c) => c.key)).toContain('plantarFasciitis')
   })
@@ -298,11 +299,32 @@ describe('疾患モデルの内容の妥当性（データの取り違え防止�
       expect(e.disease, `${e.name} が ${c.key} 向けに登録されていません`).toContain(c.key)
     }
   })
+
+  /**
+   * 説明スライドで「この薬を使います」と示したのに、処方・計画の画面でその薬を
+   * 選べない、という食い違いを防ぐ。画面はマスタ側の disease で絞り込んでいるため、
+   * 治療の階段に載せた薬は、必ずその疾患向けに登録されていなければならない。
+   */
+  it.each(CONDITIONS.map((c) => [c.label, c] as const))('%s：治療で挙げた薬が計画画面でも選べる', (_label, c) => {
+    for (const t of c.treatments) {
+      for (const id of t.drugIds ?? []) {
+        const d = getDrug(id)!
+        expect(d.disease, `${d.generic} が ${c.key} 向けに登録されていません`).toContain(c.key)
+      }
+    }
+  })
+
+  it.each(CONDITIONS.map((c) => [c.label, c] as const))('%s：検査候補が計画画面でも選べる', (_label, c) => {
+    for (const id of c.labIds ?? []) {
+      const l = getLabOrder(id)!
+      expect(l.disease, `${l.name} が ${c.key} 向けに登録されていません`).toContain(c.key)
+    }
+  })
 })
 
 describe('トップ画面の疾患カタログ', () => {
-  it('15疾患すべてが載っている', () => {
-    expect(DISEASE_CARDS).toHaveLength(15)
+  it('16疾患すべてが載っている', () => {
+    expect(DISEASE_CARDS).toHaveLength(16)
     expect(DISEASE_CARDS.length).toBe(3 + CONDITIONS.length)
   })
 
@@ -317,6 +339,10 @@ describe('トップ画面の疾患カタログ', () => {
 
   it('「股・膝」には膝と股関節が並ぶ', () => {
     expect(cardsByRegion('股・膝').map((c) => c.key)).toEqual(['kneeOA', 'hipOA'])
+  })
+
+  it('「手・指」にはばね指とドケルバン腱鞘炎が並ぶ', () => {
+    expect(cardsByRegion('手・指').map((c) => c.key)).toEqual(['triggerFinger', 'deQuervain'])
   })
 
   it('すべてのカードが部位（または main）に属する', () => {
@@ -337,6 +363,8 @@ describe('トップ画面の疾患カタログ', () => {
     expect(searchDiseases('リウマチ').map((c) => c.key)).toContain('ra')
     expect(searchDiseases('シンスプリント').map((c) => c.key)).toEqual(['shinSplints'])
     expect(searchDiseases('すね').map((c) => c.key)).toContain('shinSplints')
+    expect(searchDiseases('ケルバン').map((c) => c.key)).toEqual(['deQuervain'])
+    expect(searchDiseases('腱鞘炎').map((c) => c.key)).toEqual(['triggerFinger', 'deQuervain'])
   })
 
   it('検索語が空ならすべて返す', () => {

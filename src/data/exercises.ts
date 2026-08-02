@@ -288,7 +288,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '手指・手首の関節可動域運動',
     shortName: '手の運動',
     category: 'rom',
-    disease: ['ra', 'triggerFinger'],
+    disease: ['ra', 'triggerFinger', 'deQuervain'],
     level: 'sitting',
     steps: [
       '入浴中や入浴後、手が温まっているときに行います。',
@@ -312,7 +312,7 @@ export const EXERCISES: ExerciseItem[] = [
     name: '握る力を保つ運動（等尺性）',
     shortName: '握る運動',
     category: 'strength',
-    disease: ['ra'],
+    disease: ['ra', 'deQuervain'],
     level: 'sitting',
     steps: [
       'やわらかいスポンジやタオルを軽く握ります。',

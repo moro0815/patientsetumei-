@@ -458,3 +458,189 @@ export function TriggerFingerStageFigure({ stage }: { stage?: 1 | 2 | 3 | 4 | nu
     </Figure>
   )
 }
+
+// ================================================================ ドケルバン腱鞘炎
+
+/**
+ * ドケルバン腱鞘炎（狭窄性腱鞘炎・母指）。
+ *
+ * ばね指が「手のひら側で腱が引っかかる」のに対し、
+ * こちらは「手首の親指側で腱がトンネルを通れなくなる」病気。
+ * 場所がまったく違うので、手首を親指側から見た図で示す。
+ */
+export function DeQuervainFigure({ swollen = true }: { swollen?: boolean }) {
+  return (
+    <Figure
+      viewBox="0 0 560 310"
+      title="ドケルバン腱鞘炎（手首の親指側）"
+      desc="親指を動かす2本の腱が、手首のトンネルの中で通りにくくなっています"
+    >
+      <ArrowDefs id="dq-arrow" color={PALETTE.warn} />
+      <FigCaption x={148} y={26} size={15} color={PALETTE.inkSoft}>
+        なめらかに動く手首
+      </FigCaption>
+      <FigCaption x={412} y={26} size={15} color={PALETTE.warn}>
+        いまのあなたの手首
+      </FigCaption>
+
+      <g transform="translate(20,44)">
+        <ThumbCompartment swell={0} />
+      </g>
+      <g transform="translate(288,44)">
+        <ThumbCompartment swell={swollen ? 12 : 0} />
+      </g>
+
+      <text x={280} y={296} textAnchor="middle" fontSize={13} fontWeight={700} fill={PALETTE.ink}>
+        腱とトンネルがこすれて腫れ、親指を動かすたびに手首の親指側が痛みます
+      </text>
+    </Figure>
+  )
+}
+
+/** 手首を親指側から見た図。swell が大きいほどトンネルと腱が腫れている */
+function ThumbCompartment({ swell }: { swell: number }) {
+  const cx = 128
+  const cy = 96
+  return (
+    <g>
+      {/* 前腕（橈骨） */}
+      <path d="M4 78 L104 72 L118 104 L8 108 Z" fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth={2.4} />
+      <text x={36} y={128} fontSize={11} fill={PALETTE.inkMute}>
+        前腕の骨
+      </text>
+      {/* 橈骨茎状突起（トンネルが乗る出っぱり） */}
+      <ellipse cx={118} cy={92} rx={18} ry={16} fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth={2.4} />
+
+      {/* 手の甲 */}
+      <path d="M130 74 L206 82 Q222 86 218 102 L134 110 Z" fill={PALETTE.bg} stroke={PALETTE.line} strokeWidth={2} />
+      <text x={186} y={128} fontSize={11} fill={PALETTE.inkMute}>
+        手の甲
+      </text>
+
+      {/* 親指 */}
+      <path d="M132 78 L176 34 Q186 24 196 34 L156 84 Z" fill={PALETTE.bg} stroke={PALETTE.line} strokeWidth={2} />
+      <text x={196} y={30} fontSize={11.5} fontWeight={700} fill={PALETTE.inkSoft}>
+        親指
+      </text>
+
+      {/* 親指を動かす2本の腱 */}
+      <path d="M14 92 Q80 88 122 86 Q152 62 184 40" fill="none" stroke="#e6c68b" strokeWidth={8} strokeLinecap="round" />
+      <path d="M16 100 Q82 96 126 94 Q154 72 188 50" fill="none" stroke="#e6c68b" strokeWidth={8} strokeLinecap="round" />
+
+      {/* トンネル（伸筋支帯） */}
+      <rect
+        x={100}
+        y={68}
+        width={36}
+        height={40}
+        rx={9}
+        fill="none"
+        stroke={swell > 0 ? PALETTE.warn : PALETTE.brandMid}
+        strokeWidth={swell > 0 ? 6 : 5}
+      />
+      <text x={118} y={152} textAnchor="middle" fontSize={11.5} fontWeight={700} fill={swell > 0 ? PALETTE.warn : PALETTE.brand}>
+        トンネル
+      </text>
+      <text x={118} y={166} textAnchor="middle" fontSize={10.5} fill={PALETTE.inkMute}>
+        （腱鞘）
+      </text>
+
+      {/* 腫れ */}
+      {swell > 0 && (
+        <>
+          <ellipse cx={cx - 10} cy={cy - 6} rx={22 + swell / 2} ry={16 + swell / 3} fill={PALETTE.warnLight} opacity={0.75} stroke={PALETTE.warn} strokeWidth={3} />
+          <line x1={92} y1={22} x2={112} y2={62} stroke={PALETTE.warn} strokeWidth={2.5} markerEnd="url(#dq-arrow)" />
+          <text x={2} y={16} fontSize={12.5} fontWeight={800} fill={PALETTE.warn}>
+            トンネルが厚くなり
+          </text>
+          <text x={2} y={32} fontSize={12.5} fontWeight={800} fill={PALETTE.warn}>
+            腱も腫れて通りにくい
+          </text>
+        </>
+      )}
+
+      <text x={62} y={186} fontSize={11.5} fontWeight={700} fill="#a06a3c">
+        親指を動かす2本の腱
+      </text>
+    </g>
+  )
+}
+
+/**
+ * 患者さん自身が確かめられる誘発テスト。
+ * 診察室で一度やってもらうと、痛みの正体が「この腱」だと納得されやすい。
+ */
+export function ThumbProvocationFigure() {
+  return (
+    <Figure viewBox="0 0 560 250" title="この動きで痛むか確かめます" desc="親指を握り込んで、手首を小指側へ倒すと痛みが走ります">
+      <ArrowDefs id="dq2-arrow" color={PALETTE.warn} />
+      <FigCaption x={280} y={26} size={16}>
+        この動きで、手首の親指側が痛みますか
+      </FigCaption>
+
+      {/* 前腕 */}
+      <path d="M40 96 L168 92 L172 138 L44 142 Z" fill={PALETTE.bg} stroke={PALETTE.line} strokeWidth={2} />
+      {/* こぶし（親指を中に握り込む） */}
+      <g transform="rotate(22 190 116)">
+        <rect x={168} y={80} width={78} height={68} rx={20} fill={PALETTE.bg} stroke={PALETTE.line} strokeWidth={2.5} />
+        <path d="M180 96 L214 96 M180 112 L216 112 M180 128 L212 128" stroke={PALETTE.line} strokeWidth={2} />
+        <path d="M188 92 Q206 104 200 130" fill="none" stroke={PALETTE.brandMid} strokeWidth={5} strokeLinecap="round" />
+        <text x={252} y={96} fontSize={11.5} fontWeight={700} fill={PALETTE.brandMid}>
+          親指を
+        </text>
+        <text x={252} y={111} fontSize={11.5} fontWeight={700} fill={PALETTE.brandMid}>
+          中に握り込む
+        </text>
+      </g>
+
+      {/* 倒す向き */}
+      <path d="M232 176 Q212 200 176 200" fill="none" stroke={PALETTE.warn} strokeWidth={3.5} markerEnd="url(#dq2-arrow)" />
+      <text x={244} y={188} fontSize={12.5} fontWeight={800} fill={PALETTE.warn}>
+        手首を小指側へ倒す
+      </text>
+
+      {/* 痛む場所 */}
+      <circle cx={162} cy={98} r={15} fill={PALETTE.warnLight} stroke={PALETTE.warn} strokeWidth={3.5} />
+      <circle cx={162} cy={98} r={5} fill={PALETTE.warn} />
+      <line x1={100} y1={48} x2={148} y2={86} stroke={PALETTE.warn} strokeWidth={2.5} markerEnd="url(#dq2-arrow)" />
+      <text x={24} y={44} fontSize={13} fontWeight={800} fill={PALETTE.warn}>
+        ここが痛む
+      </text>
+
+      <text x={280} y={234} textAnchor="middle" fontSize={12.5} fontWeight={700} fill={PALETTE.inkSoft}>
+        痛みが走れば、この2本の腱が原因である可能性が高いということです
+      </text>
+    </Figure>
+  )
+}
+
+/** 誘因になる日常動作（産後の抱っこ・スマートフォン・家事） */
+export function ThumbLoadFigure() {
+  return (
+    <Figure viewBox="0 0 560 220" title="どんな動作で痛むか" desc="親指を広げて力を入れる動作でいちばん痛みます">
+      <FigCaption x={280} y={24} size={15}>
+        こんな動きで痛みが出ます
+      </FigCaption>
+      {[
+        { icon: '👶', label: '赤ちゃんを\n抱き上げる' },
+        { icon: '📱', label: 'スマートフォンを\n片手で持って操作' },
+        { icon: '🧻', label: 'タオル・雑巾を\n絞る' },
+        { icon: '🫙', label: 'ふたを開ける\n物をつまみ上げる' },
+      ].map((it, i) => {
+        const x = 30 + i * 134
+        return (
+          <g key={i}>
+            <rect x={x} y={40} width={118} height={124} rx={12} fill={PALETTE.bg} stroke={PALETTE.line} strokeWidth={1.6} />
+            <text x={x + 59} y={86} textAnchor="middle" fontSize={32}>
+              {it.icon}
+            </text>
+            <MultiText x={x + 59} y={112} anchor="middle" lines={it.label.split('\n')} size={11.5} color={PALETTE.inkSoft} weight={600} />
+          </g>
+        )
+      })}
+      <text x={280} y={196} textAnchor="middle" fontSize={12.5} fontWeight={700} fill={PALETTE.good}>
+        抱き上げるときは、親指を使わず「手のひら全体ですくう」と負担が減ります
+      </text>
+    </Figure>
+  )
+}
