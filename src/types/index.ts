@@ -542,6 +542,7 @@ export interface ExerciseItem {
 
 export type ExerciseFigureKey =
   | 'oneLegStand'
+  | 'tandemStance'
   | 'squat'
   | 'heelRaise'
   | 'backExtension'

@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
-import { ArrowDefs, Figure, Floor, PALETTE, StickPerson } from './common'
+import { ArrowDefs, Figure, Floor, MOTION, PALETTE, StickPerson } from './common'
 import type { ExerciseFigureKey } from '@/types'
 import type { StickPose } from './common'
 import { EXERCISE2_MAP } from './exercise2'
@@ -38,20 +38,24 @@ function Frame({
   desc,
   children,
   caption,
+  /** 横幅。1枚に2つの視点を並べる図だけ広げる（高さは220で固定） */
+  w = 240,
 }: {
   title: string
   desc: string
   children: ReactNode
   caption?: string
+  w?: number
 }) {
   return (
-    <Figure viewBox={FRAME} title={title} desc={desc}>
-      <rect x="0" y="0" width="240" height="220" fill={PALETTE.paper} />
+    <Figure viewBox={w === 240 ? FRAME : `0 0 ${w} 220`} title={title} desc={desc}>
+      <rect x="0" y="0" width={w} height="220" fill={PALETTE.paper} />
       <ArrowDefs id="exArr" color={PALETTE.brandMid} size={6} />
       <ArrowDefs id="exArrWarn" color={PALETTE.warn} size={6} />
+      <ArrowDefs id="exArrEnd" color={MOTION.end} size={5} />
       {children}
       {caption && (
-        <text x="120" y="214" textAnchor="middle" fontSize="12" fontWeight="700" fill={PALETTE.inkSoft}>
+        <text x={w / 2} y="214" textAnchor="middle" fontSize="12" fontWeight="700" fill={PALETTE.inkSoft}>
           {caption}
         </text>
       )}
@@ -112,6 +116,138 @@ function OneLegStand() {
       </text>
       <text x="24" y="106" fontSize="11" fill={PALETTE.inkSoft}>
         つかまる物のそばで
+      </text>
+    </Frame>
+  )
+}
+
+/**
+ * つぎ足立ち（タンデム立位）。
+ *
+ * 以前はこの運動に片脚立ちの図を流用しており、「床につかない」という注意まで
+ * 一緒に表示されていた。処方したものより難しい課題の絵を見せることになり、
+ * 転倒につながりうるため、専用の図に分けた。
+ *
+ * この運動の要点は「前の足のかかとと後ろの足のつま先が一直線に接する」ことだが、
+ * 側面図だけでは足が重なって読めず、正面図では奥行きに隠れて読めない。
+ * そこで側面図（両足が床についていること・支持物の位置）と
+ * 真上から見た足の図（一直線であること）を並べている。
+ */
+function TandemStance() {
+  const FL = 170
+  /** 真上から見た足あと。上がつま先、下がかかと */
+  const footPrint = (cx: number, yTop: number, yBot: number) =>
+    `M${cx - 8} ${yBot - 7} Q${cx - 10} ${yTop + 12} ${cx - 7} ${yTop + 5}` +
+    ` Q${cx} ${yTop - 2} ${cx + 7} ${yTop + 5} Q${cx + 10} ${yTop + 12} ${cx + 8} ${yBot - 7}` +
+    ` Q${cx + 8} ${yBot} ${cx} ${yBot} Q${cx - 8} ${yBot} ${cx - 8} ${yBot - 7} Z`
+
+  return (
+    <Frame
+      title="つぎ足立ち（タンデム立位）"
+      desc="前の足のかかとと後ろの足のつま先を一直線に接して、両足を床につけたまま立つ。机・手すり・壁のそばで行う。"
+      caption="左右各30秒 × 2セット／1日1〜2回"
+      w={320}
+    >
+      <text x="14" y="22" fontSize="11" fill={PALETTE.inkSoft}>
+        机・手すり・壁など、つかまれる物の横で
+      </text>
+
+      {/* 注意点。上段の空きに置き、机に添えた手を指す */}
+      <text x="14" y="44" fontSize="10.5" fontWeight="700" fill={MOTION.caution}>
+        ふらついたら、
+      </text>
+      <text x="14" y="57" fontSize="10.5" fontWeight="700" fill={MOTION.caution}>
+        すぐ机につかまります
+      </text>
+      <path d="M62 66 Q78 82 86 96" fill="none" stroke={MOTION.caution} strokeWidth="2.5" markerEnd="url(#exArrWarn)" />
+
+      {/* ---------------- 側面から見た図 ---------------- */}
+
+      {/* 支えにする机（指先を軽く添える） */}
+      <g stroke={MOTION.prop} strokeWidth="3" fill="none">
+        <line x1={14} y1={102} x2={92} y2={102} />
+        <line x1={20} y1={102} x2={20} y2={FL} />
+        <line x1={86} y1={102} x2={86} y2={FL} />
+      </g>
+
+      {/* 体（側面。左を向いて立っている） */}
+      <g stroke={MOTION.end} fill="none" strokeLinecap="round">
+        <circle cx={122} cy={38} r={11} fill={MOTION.end} stroke="none" />
+        <line x1={122} y1={50} x2={122} y2={102} strokeWidth="6" />
+        {/* 手前の腕：机に指先を添える */}
+        <line x1={122} y1={56} x2={106} y2={82} strokeWidth="5" />
+        <line x1={106} y1={82} x2={88} y2={99} strokeWidth="5" />
+        {/* 奥の腕：自然に下ろす */}
+        <line x1={122} y1={58} x2={134} y2={84} strokeWidth="4.5" />
+        <line x1={134} y1={84} x2={136} y2={108} strokeWidth="4.5" />
+        {/* 前の脚（左側） */}
+        <line x1={122} y1={102} x2={110} y2={132} strokeWidth="5.5" />
+        <line x1={110} y1={132} x2={110} y2={160} strokeWidth="5.5" />
+        {/* 後ろの脚（右側） */}
+        <line x1={122} y1={102} x2={136} y2={132} strokeWidth="5.5" />
+        <line x1={136} y1={132} x2={140} y2={160} strokeWidth="5.5" />
+      </g>
+
+      {/*
+        両足。前足のかかと（右端）と後ろ足のつま先（左端）が x=125 で接する。
+        重なって1枚に見えないよう、前足は塗り、後ろ足は白抜きで描き分ける。
+      */}
+      <path
+        d="M96 170 Q93 161 103 161 L120 161 Q125 161 125 165 L125 170 Z"
+        fill={MOTION.end}
+      />
+      <path
+        d="M125 170 L125 165 Q125 161 130 161 L146 161 Q156 161 153 170 Z"
+        fill={PALETTE.paper}
+        stroke={MOTION.end}
+        strokeWidth={2.2}
+      />
+
+      <Floor x1={14} x2={176} y={FL} />
+
+      {/* 床の一直線のガイドと、接する点の印 */}
+      <line x1={92} y1={FL + 7} x2={158} y2={FL + 7} stroke={MOTION.arrow} strokeWidth="2" strokeDasharray="6 4" />
+      <circle cx={125} cy={165} r={6.5} fill="none" stroke={MOTION.arrow} strokeWidth="2.5" />
+
+      <text x="120" y="192" textAnchor="middle" fontSize="10" fontWeight="700" fill={MOTION.end}>
+        両足とも床につけたまま
+      </text>
+
+      {/* ---------------- 真上から見た図 ---------------- */}
+
+      <line x1={184} y1={30} x2={184} y2={186} stroke={PALETTE.line} strokeWidth="1.2" strokeDasharray="3 4" />
+      <text x={252} y={36} textAnchor="middle" fontSize="11" fontWeight="700" fill={PALETTE.inkSoft}>
+        真上から見ると
+      </text>
+
+      {/* 一直線の基準線 */}
+      <line x1={252} y1={46} x2={252} y2={162} stroke={MOTION.arrow} strokeWidth="2" strokeDasharray="6 4" />
+
+      {/* 前の足（上）と後ろの足（下）。y=100 で接する */}
+      <path d={footPrint(252, 54, 100)} fill={MOTION.end} />
+      <path d={footPrint(252, 100, 146)} fill={PALETTE.paper} stroke={MOTION.end} strokeWidth={2.2} />
+      <circle cx={252} cy={100} r={7} fill="none" stroke={MOTION.arrow} strokeWidth="2.5" />
+
+      <text x={286} y={78} fontSize="9.5" fontWeight="700" fill={MOTION.end}>
+        前の足
+      </text>
+      <text x={280} y={128} fontSize="9.5" fontWeight="700" fill={MOTION.end}>
+        後ろの足
+      </text>
+
+      <text x={238} y={92} textAnchor="end" fontSize="9.5" fontWeight="700" fill={MOTION.arrow}>
+        かかとと
+      </text>
+      <text x={238} y={103} textAnchor="end" fontSize="9.5" fontWeight="700" fill={MOTION.arrow}>
+        つま先を
+      </text>
+      <text x={238} y={114} textAnchor="end" fontSize="9.5" fontWeight="700" fill={MOTION.arrow}>
+        つける
+      </text>
+      <line x1={240} y1={100} x2={246} y2={100} stroke={MOTION.arrow} strokeWidth="2" />
+
+      <text x={252} y={182} textAnchor="middle" fontSize="10" fontWeight="700" fill={MOTION.arrow}>
+        一直線にします
       </text>
     </Frame>
   )
@@ -670,6 +806,7 @@ function Aquatic() {
 const MAP: Record<ExerciseFigureKey, () => ReactElement> = {
   ...EXERCISE2_MAP,
   oneLegStand: OneLegStand,
+  tandemStance: TandemStance,
   squat: Squat,
   heelRaise: HeelRaise,
   backExtension: BackExtension,

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { ArrowDefs, FigCaption, Figure, MultiText, PALETTE, Pill } from './common'
 
 /**
@@ -347,74 +348,530 @@ export function DiscHerniaFigure({ side = 'right', size = 2 }: { side?: 'left' |
   )
 }
 
-/** 下肢の皮膚分節（どの神経がやられると、どこがしびれるか） */
-export function LegDermatomeFigure({ level }: { level?: 'L4' | 'L5' | 'S1' | null }) {
-  const zones: { id: 'L4' | 'L5' | 'S1'; label: string; area: string; d: string; tx: number; ty: number }[] = [
-    {
-      id: 'L4',
-      label: 'L4',
-      area: 'すねの内側〜足の内側',
-      d: 'M84 150 L96 150 L100 258 L88 292 L76 290 L78 250 Z',
-      tx: 26,
-      ty: 232,
-    },
-    {
-      id: 'L5',
-      label: 'L5',
-      area: 'すねの外側〜足の甲・親指',
-      d: 'M100 152 L116 154 L120 250 L114 296 L100 296 L100 250 Z',
-      tx: 152,
-      ty: 210,
-    },
-    {
-      id: 'S1',
-      label: 'S1',
-      area: 'ふくらはぎ〜足の外側・小指',
-      d: 'M118 156 L134 162 L136 254 L128 300 L116 300 L120 250 Z',
-      tx: 152,
-      ty: 278,
-    },
-  ]
+/* ================================================================ 皮膚分節（デルマトーム）
+
+   患者さんは「すねの外側」「前腕の小指側」と言われても、自分のどこか分からない。
+   そこで体の向きを複数並べ、内側／外側・親指側／小指側を図の中に書き込む。
+
+   塗り分けは「体の輪郭でクリップした帯」で行う。
+   帯を長方形で置いても輪郭からはみ出さないため、色が体の形に沿う。
+   どの神経根を強調するかは呼び出し側（患者さんの入力）が決めるため、
+   level を渡すとその範囲だけが色づく仕組みは維持している。
+   ================================================================ */
+
+interface DermBand {
+  id: string
+  /** 帯の範囲（図の座標） */
+  x: number
+  w: number
+  y: number
+  h: number
+}
+
+/**
+ * 体の輪郭の中だけに帯を塗る。
+ * shapes は下地・クリップ・輪郭の3役を兼ねるので、1か所に書けば形がずれない。
+ */
+function DermPanel({
+  clipId,
+  shapes,
+  bands,
+  level,
+}: {
+  clipId: string
+  shapes: ReactNode
+  bands: DermBand[]
+  level?: string | null
+}) {
+  return (
+    <g>
+      <defs>
+        <clipPath id={clipId}>{shapes}</clipPath>
+        {/*
+          該当する範囲は色だけでなく斜線も重ねる。
+          パンフレットを白黒で印刷したときにも、どこが該当範囲かが残る。
+        */}
+        <pattern id={`${clipId}-hatch`} width={8} height={8} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1={0} y1={0} x2={0} y2={8} stroke={PALETTE.warn} strokeWidth={2} />
+        </pattern>
+      </defs>
+      {/* 下地 */}
+      <g fill={PALETTE.bg} stroke="none">
+        {shapes}
+      </g>
+      {/* 神経根ごとの範囲（輪郭でクリップするので体の形に沿う） */}
+      <g clipPath={`url(#${clipId})`}>
+        {bands.map((b) => (
+          <rect key={b.id} x={b.x} y={b.y} width={b.w} height={b.h} fill={level === b.id ? PALETTE.warnLight : PALETTE.bg} />
+        ))}
+        {bands
+          .filter((b) => level === b.id)
+          .map((b) => (
+            <rect key={`h${b.id}`} x={b.x} y={b.y} width={b.w} height={b.h} fill={`url(#${clipId}-hatch)`} opacity={0.45} />
+          ))}
+        {/* 範囲の区切り。該当範囲の縁だけは太く色をつける */}
+        {bands.slice(1).map((b, i) => {
+          const on = level === b.id || level === bands[i].id
+          return (
+            <line
+              key={`d${b.id}`}
+              x1={b.x}
+              y1={b.y}
+              x2={b.x}
+              y2={b.y + b.h}
+              stroke={on ? PALETTE.warn : PALETTE.line}
+              strokeWidth={on ? 3 : 1}
+            />
+          )
+        })}
+      </g>
+      {/* 輪郭を上描き */}
+      <g fill="none" stroke={PALETTE.line} strokeWidth={2}>
+        {shapes}
+      </g>
+    </g>
+  )
+}
+
+/** 図の中の小さな見出し（○○から見た図） */
+function ViewLabel({ x, y, children }: { x: number; y: number; children: ReactNode }) {
+  return (
+    <text x={x} y={y} textAnchor="middle" fontSize={12} fontWeight={700} fill={PALETTE.inkSoft}>
+      {children}
+    </text>
+  )
+}
+
+/** 内側・外側などの向きを図の中に明示する（左右の取り違えを防ぐ） */
+function SideMark({ x, y, children }: { x: number; y: number; children: ReactNode }) {
+  return (
+    <text x={x} y={y} textAnchor="middle" fontSize={10} fill={PALETTE.inkMute}>
+      {children}
+    </text>
+  )
+}
+
+/** 凡例の1行（色見本＋神経根＋範囲） */
+function DermLegendRow({
+  x,
+  y,
+  id,
+  text,
+  on,
+}: {
+  x: number
+  y: number
+  id: string
+  text: string
+  on: boolean
+}) {
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y - 11}
+        width={18}
+        height={14}
+        rx={3}
+        fill={on ? PALETTE.warnLight : '#ffffff'}
+        stroke={on ? PALETTE.warn : PALETTE.line}
+        strokeWidth={on ? 2.6 : 1.2}
+      />
+      <text x={x + 26} y={y} fontSize={13} fontWeight={800} fill={on ? PALETTE.warn : PALETTE.inkMute}>
+        {id}
+      </text>
+      <text x={x + 56} y={y} fontSize={11.5} fontWeight={on ? 700 : 400} fill={on ? PALETTE.warn : PALETTE.inkSoft}>
+        {text}
+      </text>
+    </g>
+  )
+}
+
+const DERM_NOTE = '※ 皮膚分節（しびれる範囲）の分布には個人差があります'
+
+/**
+ * 下肢の皮膚分節（L4・L5・S1）。
+ *
+ * 前からの図だけでは S1（ふくらはぎ・足の裏）が描けないため、
+ * 前・後ろ・足の甲・足の裏の4方向を1枚に並べている。
+ */
+export function LegDermatomeFigure({
+  level,
+  /** スライドでは見出しが重複するため、既定では図の中に見出しを出さない */
+  showTitle = false,
+}: {
+  level?: 'L4' | 'L5' | 'S1' | null
+  showTitle?: boolean
+}) {
+  /** 脚の輪郭（腰から足先まで。ひざ・ふくらはぎ・足首のくびれをつける） */
+  const leg = (cx: number) => (
+    <path
+      d={
+        `M${cx - 30} 68 Q${cx} 58 ${cx + 30} 68` +
+        ` L${cx + 28} 120 L${cx + 20} 168` + // 大腿 → ひざ
+        ` Q${cx + 27} 196 ${cx + 24} 232` + // ふくらはぎ
+        ` L${cx + 13} 292 L${cx + 12} 306` + // 足首
+        ` L${cx + 19} 332 L${cx - 19} 332` + // 足
+        ` L${cx - 12} 306 L${cx - 13} 292` +
+        ` Q${cx - 27} 196 ${cx - 20} 168` +
+        ` L${cx - 28} 120 Z`
+      }
+    />
+  )
+
+  /** 足（つま先を上にした甲／裏の図）。指を分けて描き、親指・小指が分かるようにする */
+  const foot = (cx: number) => (
+    <>
+      <path
+        d={
+          `M${cx - 19} 226 Q${cx - 27} 190 ${cx - 22} 152 Q${cx - 20} 130 ${cx - 11} 122` +
+          ` L${cx + 12} 124 Q${cx + 22} 134 ${cx + 22} 158 Q${cx + 27} 194 ${cx + 17} 226` +
+          ` Q${cx} 234 ${cx - 19} 226 Z`
+        }
+      />
+      <ellipse cx={cx - 13} cy={110} rx={9} ry={12} />
+      <ellipse cx={cx - 1} cy={107} rx={5.5} ry={9} />
+      <ellipse cx={cx + 7} cy={110} rx={5} ry={8.5} />
+      <ellipse cx={cx + 14} cy={115} rx={4.5} ry={7.5} />
+      <ellipse cx={cx + 20} cy={122} rx={4} ry={6.5} />
+    </>
+  )
+
+  const FRONT = 82
+  const BACK = 186
+  const DORSUM = 320
+  const SOLE = 430
 
   return (
-    <Figure viewBox="0 0 300 330" title="しびれる場所と神経のつながり" desc="押されている神経によって、しびれる場所が決まります">
-      <FigCaption x={150} y={22} size={15}>
-        しびれる場所で、どの神経かが分かります
-      </FigCaption>
-      {/* 脚のシルエット */}
-      <path d="M76 60 Q106 48 136 60 L136 156 L132 300 L116 316 L98 316 L84 300 L78 156 Z" fill={PALETTE.bg} stroke={PALETTE.line} strokeWidth={2} />
-      <path d="M84 300 L70 316" stroke={PALETTE.line} strokeWidth={8} strokeLinecap="round" />
-      <path d="M128 300 L142 316" stroke={PALETTE.line} strokeWidth={8} strokeLinecap="round" />
+    <Figure
+      viewBox="0 0 560 390"
+      title="しびれる場所と神経のつながり（脚）"
+      desc="押されている神経によって、脚と足のどこがしびれるかが決まります。前・後ろ・足の甲・足の裏の4方向で示しています"
+    >
+      {showTitle && (
+        <FigCaption x={280} y={24} size={15}>
+          しびれる場所で、どの神経かが分かります
+        </FigCaption>
+      )}
 
-      {zones.map((z) => {
-        const on = level === z.id
+      <ViewLabel x={FRONT} y={52}>
+        前から
+      </ViewLabel>
+      <ViewLabel x={BACK} y={52}>
+        後ろから
+      </ViewLabel>
+      <ViewLabel x={DORSUM} y={52}>
+        足の甲
+      </ViewLabel>
+      <ViewLabel x={SOLE} y={52}>
+        足の裏
+      </ViewLabel>
+
+      {/* 前から：ひざより下を内側（L4）と外側（L5）に分ける */}
+      <DermPanel
+        clipId="derm-leg-front"
+        shapes={leg(FRONT)}
+        level={level}
+        bands={[
+          { id: 'L4', x: FRONT - 32, w: 32, y: 150, h: 186 },
+          { id: 'L5', x: FRONT, w: 32, y: 150, h: 186 },
+        ]}
+      />
+      <line x1={FRONT - 22} y1={168} x2={FRONT + 22} y2={168} stroke={PALETTE.inkMute} strokeWidth={1.2} strokeDasharray="4 3" />
+      <text x={FRONT + 26} y={172} fontSize={10} fill={PALETTE.inkMute}>
+        ひざ
+      </text>
+      <SideMark x={FRONT - 30} y={352}>
+        内側
+      </SideMark>
+      <SideMark x={FRONT + 30} y={352}>
+        外側
+      </SideMark>
+
+      {/* 後ろから：ふくらはぎ〜足の外側（S1） */}
+      <DermPanel
+        clipId="derm-leg-back"
+        shapes={leg(BACK)}
+        level={level}
+        bands={[{ id: 'S1', x: BACK - 32, w: 64, y: 172, h: 164 }]}
+      />
+      <line x1={BACK - 22} y1={168} x2={BACK + 22} y2={168} stroke={PALETTE.inkMute} strokeWidth={1.2} strokeDasharray="4 3" />
+      <text x={BACK + 26} y={172} fontSize={10} fill={PALETTE.inkMute}>
+        ひざ裏
+      </text>
+      <SideMark x={BACK - 30} y={352}>
+        外側
+      </SideMark>
+      <SideMark x={BACK + 30} y={352}>
+        内側
+      </SideMark>
+
+      {/* 足の甲：内側（L4）／甲と親指（L5）／外側と小指（S1） */}
+      <DermPanel
+        clipId="derm-foot-dorsum"
+        shapes={foot(DORSUM)}
+        level={level}
+        bands={[
+          { id: 'L4', x: DORSUM - 30, w: 12, y: 96, h: 144 },
+          { id: 'L5', x: DORSUM - 18, w: 28, y: 96, h: 144 },
+          { id: 'S1', x: DORSUM + 10, w: 24, y: 96, h: 144 },
+        ]}
+      />
+      <text x={DORSUM - 24} y={94} fontSize={9.5} fill={PALETTE.inkMute}>
+        親指
+      </text>
+      <text x={DORSUM + 16} y={100} fontSize={9.5} fill={PALETTE.inkMute}>
+        小指
+      </text>
+      <SideMark x={DORSUM - 32} y={248}>
+        内側
+      </SideMark>
+      <SideMark x={DORSUM + 32} y={248}>
+        外側
+      </SideMark>
+
+      {/* 足の裏：内側の帯（L5）と、大部分（S1） */}
+      <DermPanel
+        clipId="derm-foot-sole"
+        shapes={foot(SOLE)}
+        level={level}
+        bands={[
+          { id: 'L5', x: SOLE - 30, w: 24, y: 96, h: 144 },
+          { id: 'S1', x: SOLE - 6, w: 40, y: 96, h: 144 },
+        ]}
+      />
+      <SideMark x={SOLE - 32} y={248}>
+        内側
+      </SideMark>
+      <SideMark x={SOLE + 32} y={248}>
+        外側
+      </SideMark>
+
+      {/* 凡例 */}
+      {(
+        [
+          { id: 'L4', area: 'すねの内側 〜 足の内側' },
+          { id: 'L5', area: 'すねの外側 〜 足の甲・親指' },
+          { id: 'S1', area: 'ふくらはぎ 〜 足の裏・外側・小指' },
+        ] as const
+      ).map((r, i) => (
+        <DermLegendRow key={r.id} x={300} y={286 + i * 24} id={r.id} text={r.area} on={level === r.id} />
+      ))}
+
+      <text x={280} y={376} textAnchor="middle" fontSize={11} fill={PALETTE.inkMute}>
+        {DERM_NOTE}
+      </text>
+    </Figure>
+  )
+}
+
+/**
+ * 上肢の皮膚分節（C5〜C8）。
+ *
+ * 以前は表だけで示していたが、患者さんは「前腕の小指側」と言われても
+ * 自分のどこか分からない。腕を前・後ろから見た図と、手のひら・手の甲の図を
+ * 並べ、指のどこまでかを目で確認できるようにした。
+ * 「弱くなる動き」は診察での確認と自己観察の手がかりになるため凡例に残している。
+ */
+export function ArmDermatomeFigure({
+  level,
+  /** スライドでは見出しが重複するため、既定では図の中に見出しを出さない */
+  showTitle = false,
+}: {
+  level?: 'C5' | 'C6' | 'C7' | 'C8' | null
+  showTitle?: boolean
+}) {
+  /** 腕の輪郭（肩から手首まで垂らした形。ひじと手首をくびれさせる） */
+  const arm = (cx: number) => (
+    <path
+      d={
+        `M${cx - 26} 92 Q${cx} 68 ${cx + 26} 92` +
+        ` L${cx + 22} 130 L${cx + 15} 150` + // 二の腕 → ひじ
+        ` Q${cx + 20} 186 ${cx + 15} 218` + // 前腕
+        ` L${cx + 11} 246 L${cx - 11} 246` + // 手首
+        ` L${cx - 15} 218 Q${cx - 20} 186 ${cx - 15} 150` +
+        ` L${cx - 22} 130 Z`
+      }
+    />
+  )
+
+  /**
+   * 手の輪郭。m = +1 で親指が図の左（手のひらを見た形）、
+   * m = −1 で親指が図の右（手の甲を見た形）。
+   * u は「親指側からの距離」で、m をかけて実際の x にする。
+   */
+  const handParts = (cx: number, m: 1 | -1) => {
+    const X = (u: number) => cx + m * u
+    const fingers = [
+      { u: -22, top: 116 }, // 人差し指
+      { u: -7, top: 108 }, // 中指
+      { u: 8, top: 116 }, // 薬指
+      { u: 22, top: 130 }, // 小指
+    ]
+    const shapes = (
+      <>
+        <rect x={cx - 31} y={152} width={62} height={62} rx={14} />
+        {fingers.map((f) => (
+          <rect key={f.u} x={X(f.u) - 6.5} y={f.top} width={13} height={172 - f.top} rx={6} />
+        ))}
+        <rect
+          x={X(-36) - 8}
+          y={168}
+          width={16}
+          height={38}
+          rx={8}
+          transform={`rotate(${m * -34} ${X(-36)} 188)`}
+        />
+      </>
+    )
+    /** 帯の範囲を親指側からの距離で指定し、m の向きに合わせて x に直す */
+    const band = (id: string, from: number, to: number): DermBand => {
+      const a = X(from)
+      const b = X(to)
+      return { id, x: Math.min(a, b), w: Math.abs(b - a), y: 100, h: 120 }
+    }
+    return { X, shapes, band }
+  }
+
+  const ARM_F = 78
+  const ARM_B = 180
+  const PALM = 320
+  const DORS = 452
+
+  const palm = handParts(PALM, 1)
+  const dors = handParts(DORS, -1)
+
+  return (
+    <Figure
+      viewBox="0 0 560 400"
+      title="しびれる場所と神経のつながり（腕）"
+      desc="押されている神経によって、腕と手のどこがしびれるか、どの動きが弱くなるかが決まります"
+    >
+      {showTitle && (
+        <FigCaption x={280} y={24} size={15}>
+          しびれる場所で、どの神経かが分かります
+        </FigCaption>
+      )}
+
+      <ViewLabel x={ARM_F} y={52}>
+        腕を前から
+      </ViewLabel>
+      <ViewLabel x={ARM_B} y={52}>
+        腕を後ろから
+      </ViewLabel>
+      <ViewLabel x={PALM} y={52}>
+        手のひら
+      </ViewLabel>
+      <ViewLabel x={DORS} y={52}>
+        手の甲
+      </ViewLabel>
+
+      {/* 腕を前から：肩〜二の腕の外側（C5）、前腕の親指側（C6）と小指側（C8） */}
+      <DermPanel
+        clipId="derm-arm-front"
+        shapes={arm(ARM_F)}
+        level={level}
+        bands={[
+          { id: 'C5', x: ARM_F - 28, w: 56, y: 64, h: 74 },
+          { id: 'C6', x: ARM_F - 22, w: 22, y: 150, h: 100 },
+          { id: 'C8', x: ARM_F, w: 22, y: 150, h: 100 },
+        ]}
+      />
+      <line x1={ARM_F - 17} y1={147} x2={ARM_F + 17} y2={147} stroke={PALETTE.inkMute} strokeWidth={1.2} strokeDasharray="4 3" />
+      <text x={ARM_F + 21} y={151} fontSize={10} fill={PALETTE.inkMute}>
+        ひじ
+      </text>
+      <SideMark x={ARM_F - 26} y={262}>
+        親指側
+      </SideMark>
+      <SideMark x={ARM_F + 26} y={262}>
+        小指側
+      </SideMark>
+
+      {/* 腕を後ろから：二の腕の後ろ〜前腕の中央（C7） */}
+      <DermPanel
+        clipId="derm-arm-back"
+        shapes={arm(ARM_B)}
+        level={level}
+        bands={[{ id: 'C7', x: ARM_B - 14, w: 28, y: 96, h: 154 }]}
+      />
+      <line x1={ARM_B - 17} y1={147} x2={ARM_B + 17} y2={147} stroke={PALETTE.inkMute} strokeWidth={1.2} strokeDasharray="4 3" />
+      <text x={ARM_B + 21} y={151} fontSize={10} fill={PALETTE.inkMute}>
+        ひじ
+      </text>
+      <SideMark x={ARM_B - 26} y={262}>
+        小指側
+      </SideMark>
+      <SideMark x={ARM_B + 26} y={262}>
+        親指側
+      </SideMark>
+
+      {/* 手のひら・手の甲：親指と人差し指（C6）／中指（C7）／薬指と小指（C8） */}
+      <DermPanel
+        clipId="derm-palm"
+        shapes={palm.shapes}
+        level={level}
+        bands={[palm.band('C6', -48, -14), palm.band('C7', -14, 1), palm.band('C8', 1, 33)]}
+      />
+      <SideMark x={palm.X(-36)} y={262}>
+        親指側
+      </SideMark>
+      <SideMark x={palm.X(30)} y={262}>
+        小指側
+      </SideMark>
+
+      <DermPanel
+        clipId="derm-dorsum"
+        shapes={dors.shapes}
+        level={level}
+        bands={[dors.band('C6', -48, -14), dors.band('C7', -14, 1), dors.band('C8', 1, 33)]}
+      />
+      <SideMark x={dors.X(-36)} y={262}>
+        親指側
+      </SideMark>
+      <SideMark x={dors.X(30)} y={262}>
+        小指側
+      </SideMark>
+
+      {/* 凡例（しびれる範囲と、弱くなる動き） */}
+      {(
+        [
+          { id: 'C5', where: '肩から二の腕の外側', weak: '腕を横に上げる力' },
+          { id: 'C6', where: '前腕の親指側 〜 親指・人差し指', weak: 'ひじを曲げる／手首を反らす力' },
+          { id: 'C7', where: '二の腕の後ろ 〜 中指', weak: 'ひじを伸ばす力' },
+          { id: 'C8', where: '前腕の小指側 〜 薬指・小指', weak: '指を曲げる／握る力' },
+        ] as const
+      ).map((r, i) => {
+        const y = 276 + i * 28
+        const on = level === r.id
         return (
-          <g key={z.id}>
-            <path d={z.d} fill={on ? PALETTE.warnLight : '#ffffff'} stroke={on ? PALETTE.warn : PALETTE.line} strokeWidth={on ? 3 : 1.4} opacity={on ? 1 : 0.7} />
-            <text
-              x={z.tx}
-              y={z.ty}
-              fontSize={13}
-              fontWeight={on ? 800 : 700}
-              fill={on ? PALETTE.warn : PALETTE.inkMute}
-              textAnchor={z.tx < 100 ? 'start' : 'start'}
-            >
-              {z.label}
-            </text>
-            <MultiText
-              x={z.tx}
-              y={z.ty + 16}
-              size={10.5}
-              lines={z.area.split('〜').map((s, i, arr) => (i < arr.length - 1 ? `${s}〜` : s))}
-              color={on ? PALETTE.warn : PALETTE.inkMute}
-              weight={on ? 700 : 400}
+          <g key={r.id}>
+            <rect
+              x={24}
+              y={y}
+              width={512}
+              height={24}
+              rx={6}
+              fill={on ? PALETTE.warnLight : PALETTE.bg}
+              stroke={on ? PALETTE.warn : PALETTE.line}
+              strokeWidth={on ? 2.4 : 1.2}
             />
+            <text x={38} y={y + 17} fontSize={13} fontWeight={800} fill={on ? PALETTE.warn : PALETTE.inkMute}>
+              {r.id}
+            </text>
+            <text x={70} y={y + 17} fontSize={11} fontWeight={700} fill={PALETTE.ink}>
+              しびれ：{r.where}
+            </text>
+            <text x={296} y={y + 17} fontSize={11} fill={PALETTE.inkSoft}>
+              弱くなる動き：{r.weak}
+            </text>
           </g>
         )
       })}
-      {level && (
-        <Pill x={92} y={2} w={116} h={0} fill="none" label="" />
-      )}
+
+      <text x={280} y={394} textAnchor="middle" fontSize={11} fill={PALETTE.inkMute}>
+        {DERM_NOTE}
+      </text>
     </Figure>
   )
 }
@@ -509,55 +966,6 @@ export function CervicalForamenFigure({ side = 'right' }: { side?: 'left' | 'rig
       <text x={280} y={308} textAnchor="middle" fontSize={13} fontWeight={700} fill={PALETTE.ink}>
         首を後ろに反らすとすき間がさらに狭くなり、腕のしびれが強くなります
       </text>
-    </Figure>
-  )
-}
-
-/** 上肢の皮膚分節（C5〜C8） */
-export function ArmDermatomeFigure({ level }: { level?: 'C5' | 'C6' | 'C7' | 'C8' | null }) {
-  const rows: { id: 'C5' | 'C6' | 'C7' | 'C8'; where: string; weak: string }[] = [
-    { id: 'C5', where: '肩から二の腕の外側', weak: '腕を横に上げる力' },
-    { id: 'C6', where: '前腕の親指側〜親指・人差し指', weak: 'ひじを曲げる／手首を反らす力' },
-    { id: 'C7', where: '前腕の後ろ〜中指', weak: 'ひじを伸ばす力' },
-    { id: 'C8', where: '前腕の小指側〜薬指・小指', weak: '指を曲げる／握る力' },
-  ]
-  return (
-    <Figure viewBox="0 0 560 260" title="しびれる場所と神経のつながり（腕）" desc="押されている神経によってしびれる場所と弱くなる筋肉が決まります">
-      <FigCaption x={280} y={24} size={15}>
-        しびれる場所で、どの神経かが分かります
-      </FigCaption>
-      {rows.map((r, i) => {
-        const y = 46 + i * 50
-        const on = level === r.id
-        return (
-          <g key={r.id}>
-            <rect
-              x={24}
-              y={y}
-              width={512}
-              height={42}
-              rx={8}
-              fill={on ? PALETTE.warnLight : PALETTE.bg}
-              stroke={on ? PALETTE.warn : PALETTE.line}
-              strokeWidth={on ? 2.6 : 1.2}
-            />
-            <text x={48} y={y + 26} fontSize={16} fontWeight={800} fill={on ? PALETTE.warn : PALETTE.inkMute}>
-              {r.id}
-            </text>
-            <text x={96} y={y + 18} fontSize={12.5} fontWeight={700} fill={PALETTE.ink}>
-              しびれ：{r.where}
-            </text>
-            <text x={96} y={y + 34} fontSize={12} fill={PALETTE.inkSoft}>
-              弱くなる動き：{r.weak}
-            </text>
-            {on && (
-              <text x={520} y={y + 26} textAnchor="end" fontSize={12} fontWeight={800} fill={PALETTE.warn}>
-                ← あなた
-              </text>
-            )}
-          </g>
-        )
-      })}
     </Figure>
   )
 }

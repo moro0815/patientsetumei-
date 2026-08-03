@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
-import { ArrowDefs, Figure, Floor, PALETTE, StickPerson } from './common'
+import { ArrowDefs, Figure, Floor, MOTION, PALETTE, StickPerson } from './common'
 import type { ExerciseFigureKey } from '@/types'
 import type { StickPose, StickPose as Pose } from './common'
 
@@ -37,20 +37,24 @@ function Frame({
   desc,
   children,
   caption,
+  /** 横幅。注意点が多く240では詰まる図だけ広げる（高さは220で固定） */
+  w = 240,
 }: {
   title: string
   desc: string
   children: ReactNode
   caption?: string
+  w?: number
 }) {
   return (
-    <Figure viewBox={FRAME} title={title} desc={desc}>
-      <rect x="0" y="0" width="240" height="220" fill={PALETTE.paper} />
+    <Figure viewBox={w === 240 ? FRAME : `0 0 ${w} 220`} title={title} desc={desc}>
+      <rect x="0" y="0" width={w} height="220" fill={PALETTE.paper} />
       <ArrowDefs id="ex2Arr" color={PALETTE.brandMid} size={6} />
       <ArrowDefs id="ex2Warn" color={PALETTE.warn} size={6} />
+      <ArrowDefs id="ex2ArrEnd" color={MOTION.end} size={5} />
       {children}
       {caption && (
-        <text x="120" y="214" textAnchor="middle" fontSize="12" fontWeight="700" fill={PALETTE.inkSoft}>
+        <text x={w / 2} y="214" textAnchor="middle" fontSize="12" fontWeight="700" fill={PALETTE.inkSoft}>
           {caption}
         </text>
       )}
@@ -681,36 +685,137 @@ function AnkleEversionBand() {
 
 // ================================================================ スポーツ
 
+/**
+ * ノルディックハムストリング。
+ *
+ * 収録している運動のなかで、やり方を誤ったときの負荷がいちばん大きい。
+ * とくに股関節を曲げて（おしりを引いて）行うと、狙ったハムストリングの
+ * 遠心性収縮が抜け、その状態で体重を支えるため受傷につながりうる。
+ * そこで図に次の5点を明示する。
+ *   ① 足首をどう固定するか   ② ひざの下にマットを敷く
+ *   ③ 頭からひざまで一直線   ④ 股関節を曲げない（誤りを並べて示す）
+ *   ⑤ 手を前に出しておく
+ * あわせて「指導者管理下で行う運動」であることを図の中に残す。
+ *
+ * 示すべき注意点が多く、正しい形と誤った形を並べる必要もあるため、
+ * この図だけ横に広げ、区切り線で2枚に分けている。
+ */
 function NordicHamstring() {
+  const FL = 176
   return (
     <Frame
       title="ノルディックハムストリング"
-      desc="ひざ立ちで足首を支えてもらい、背すじを伸ばしたままゆっくり前に倒れる。"
+      desc="ひざ立ちで足首を固定してもらい、頭からひざまで一直線を保ったまま、できるだけゆっくり前に倒れる。股関節を曲げてはいけない。指導者の管理下で行う。"
       caption="3〜5回 × 2〜3セット／週1〜2回"
+      w={380}
     >
-      {/* 開始（点線） */}
-      <g opacity={0.4}>
-        <circle cx={80} cy={54} r={11} fill="none" stroke={PALETTE.inkMute} strokeWidth={3} strokeDasharray="4 3" />
-        <path d="M80 66 L86 132" stroke={PALETTE.inkMute} strokeWidth={5} strokeDasharray="5 4" />
-      </g>
-      {/* 倒れた姿勢 */}
-      <circle cx={148} cy={92} r={11} fill={PALETTE.ink} />
-      <line x1={140} y1={98} x2={90} y2={134} stroke={PALETTE.ink} strokeWidth={7} strokeLinecap="round" />
-      {/* すね（床に接地） */}
-      <line x1={90} y1={136} x2={44} y2={162} stroke={PALETTE.ink} strokeWidth={6} strokeLinecap="round" />
-      {/* 腕（受け身の準備） */}
-      <line x1={140} y1={104} x2={168} y2={130} stroke={PALETTE.ink} strokeWidth={5} strokeLinecap="round" />
-      {/* 支える手 */}
-      <path d="M36 156 Q22 166 34 176 L52 170" fill={PALETTE.bg} stroke={PALETTE.ink} strokeWidth={2.5} />
-      <Note x={16} y={190} lines={['足首を押さえてもらう']} color={PALETTE.inkSoft} />
-      {/* 倒れる向き */}
-      <path d="M116 62 Q142 68 152 80" fill="none" stroke={PALETTE.brandMid} strokeWidth={3} markerEnd="url(#ex2Arr)" />
-      <Note x={92} y={44} lines={['できるだけゆっくり', '前に倒れる']} />
-      <ellipse cx={100} cy={148} rx={18} ry={11} fill={PALETTE.warnLight} opacity={0.7} transform="rotate(-30 100 148)" />
-      <text x={140} y={166} fontSize="10.5" fontWeight="700" fill={PALETTE.warn}>
-        太ももの裏に効く
+      {/* ================= 正しい形 ================= */}
+
+      <text x={14} y={34} fontSize="11" fontWeight="700" fill={MOTION.arrow}>
+        できるだけゆっくり前に倒れる
       </text>
-      <Floor x1={14} x2={226} y={FLOOR_Y - 14} />
+      <path d="M104 46 Q136 56 148 92" fill="none" stroke={MOTION.arrow} strokeWidth={3} markerEnd="url(#ex2Arr)" />
+
+      {/* ひざの下のマット */}
+      <rect x={44} y={FL - 12} width={76} height={12} rx={5} fill={PALETTE.bg} stroke={MOTION.prop} strokeWidth={2} />
+
+      {/* 開始姿勢（ひざ立ちでまっすぐ）＝薄いグレーの破線 */}
+      <g stroke={MOTION.start} fill="none" strokeLinecap="round">
+        <circle cx={112} cy={84} r={11} strokeWidth={2.5} strokeDasharray="4 3" />
+        <line x1={112} y1={95} x2={112} y2={158} strokeWidth={5} strokeDasharray={MOTION.startDash} />
+      </g>
+      <text x={56} y={80} fontSize="9.5" fontWeight="700" fill={MOTION.start}>
+        開始姿勢
+      </text>
+
+      {/* すね（マットの上に接地） */}
+      <line x1={112} y1={162} x2={56} y2={168} stroke={MOTION.end} strokeWidth={6} strokeLinecap="round" />
+
+      {/* 補助者の両手：足首の上をつかんで押さえる */}
+      <g fill={PALETTE.bg} stroke={MOTION.end} strokeWidth={2.2}>
+        <path d="M38 150 Q26 154 28 164 Q30 172 42 172 L58 170 L56 156 Z" />
+        <path d="M58 148 Q50 152 52 162 Q54 170 64 169 L74 168 L72 154 Z" />
+      </g>
+      <text x={14} y={120} fontSize="9.5" fontWeight="700" fill={MOTION.end}>
+        補助者が両手で
+      </text>
+      <text x={14} y={132} fontSize="9.5" fontWeight="700" fill={MOTION.end}>
+        足首を上から押さえる
+      </text>
+      <path d="M56 138 L58 148" stroke={MOTION.end} strokeWidth={2} markerEnd="url(#ex2ArrEnd)" />
+
+      {/* 効いている場所（太ももの裏） */}
+      <ellipse cx={120} cy={152} rx={14} ry={8} fill={PALETTE.warnLight} opacity={0.85} transform="rotate(-45 120 152)" />
+      <text x={14} y={100} fontSize="9.5" fontWeight="700" fill={PALETTE.warn}>
+        もも裏に効く
+      </text>
+      <line x1={74} y1={103} x2={110} y2={146} stroke={PALETTE.warn} strokeWidth={1.6} />
+
+      {/* 終了姿勢（前に倒れた形）＝濃い紺。ひざを軸に体全体が一直線のまま回る */}
+      <g stroke={MOTION.end} fill="none" strokeLinecap="round">
+        <circle cx={169} cy={105} r={11} fill={MOTION.end} stroke="none" />
+        <line x1={160} y1={114} x2={112} y2={162} strokeWidth={7} />
+        {/* 手を前に出しておく（いつでも床につける位置） */}
+        <line x1={158} y1={120} x2={190} y2={130} strokeWidth={5} />
+        <line x1={190} y1={130} x2={204} y2={152} strokeWidth={5} />
+      </g>
+
+      {/* 頭からひざまで一直線であることを示す基準線 */}
+      <line x1={180} y1={94} x2={104} y2={170} stroke={MOTION.arrow} strokeWidth={2} strokeDasharray="6 4" />
+      <text x={140} y={68} fontSize="10.5" fontWeight="700" fill={MOTION.arrow}>
+        頭からひざまで一直線
+      </text>
+
+      <Floor x1={14} x2={248} y={FL} />
+
+      <text x={16} y={194} fontSize="9.5" fontWeight="700" fill={MOTION.prop}>
+        ひざの下にマット
+      </text>
+      <text x={112} y={194} fontSize="9.5" fontWeight="700" fill={MOTION.end}>
+        手は前に出しておく（受け身）
+      </text>
+
+      {/* ================= 区切り ================= */}
+      <line x1={254} y1={14} x2={254} y2={200} stroke={PALETTE.line} strokeWidth={1.2} strokeDasharray="3 4" />
+
+      {/* ================= 誤った形 ================= */}
+
+      <rect x={264} y={14} width={106} height={38} rx={7} fill={PALETTE.warnLight} stroke={MOTION.caution} strokeWidth={1.6} />
+      <text x={317} y={31} textAnchor="middle" fontSize="10.5" fontWeight="800" fill={MOTION.caution}>
+        指導者管理下で
+      </text>
+      <text x={317} y={45} textAnchor="middle" fontSize="10.5" fontWeight="800" fill={MOTION.caution}>
+        行う運動です
+      </text>
+
+      <text x={317} y={78} textAnchor="middle" fontSize="11" fontWeight="800" fill={MOTION.caution}>
+        この形は誤り
+      </text>
+
+      <text x={266} y={102} fontSize="9.5" fontWeight="700" fill={MOTION.caution}>
+        おしりが引けている
+      </text>
+      <line x1={292} y1={106} x2={298} y2={126} stroke={MOTION.caution} strokeWidth={1.6} />
+
+      {/* 股関節が曲がり、おしりが後ろに引けている */}
+      <g stroke={MOTION.caution} fill="none" strokeLinecap="round">
+        <circle cx={350} cy={124} r={10} fill={MOTION.caution} stroke="none" />
+        <line x1={340} y1={128} x2={298} y2={132} strokeWidth={6} />
+        <line x1={298} y1={132} x2={308} y2={154} strokeWidth={6} />
+        <line x1={308} y1={154} x2={274} y2={157} strokeWidth={6} />
+        {/* 曲がっている股関節の角度 */}
+        <path d="M308 138 Q316 144 314 151" strokeWidth={2} />
+      </g>
+
+      <text x={317} y={170} textAnchor="middle" fontSize="9.5" fontWeight="700" fill={MOTION.caution}>
+        股関節を曲げて
+      </text>
+      <text x={317} y={182} textAnchor="middle" fontSize="9.5" fontWeight="700" fill={MOTION.caution}>
+        おしりを引くと
+      </text>
+      <text x={317} y={194} textAnchor="middle" fontSize="9.5" fontWeight="700" fill={MOTION.caution}>
+        もも裏に効きません
+      </text>
     </Frame>
   )
 }

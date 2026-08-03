@@ -57,8 +57,12 @@ export const EXERCISES: ExerciseItem[] = [
       '左右を入れ替えて行います。',
     ],
     dose: { reps: '左右各30秒', sets: '2セット', frequency: '1日1〜2回' },
-    stopRules: ['壁や手すりのそばで行ってください。', 'ふらつきが強い日は無理をしないでください。'],
-    figure: 'oneLegStand',
+    stopRules: [
+      '机・手すり・壁のそばで行ってください。ふらついたらすぐにつかまります。',
+      '両足とも床につけたまま行います。片脚を浮かせる運動ではありません。',
+      'ふらつきが強い日は無理をしないでください。',
+    ],
+    figure: 'tandemStance',
     sources: ['op-gl-2025'],
   },
 

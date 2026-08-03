@@ -12,59 +12,117 @@ import { ArrowDefs, FigCaption, Figure, MultiText, PALETTE, Pill } from './commo
 /** 肩の断面：関節包が縮んで硬くなる */
 export function FrozenShoulderFigure({ tight = true }: { tight?: boolean }) {
   return (
-    <Figure viewBox="0 0 560 300" title="肩の関節のしくみ" desc="関節を包む袋（関節包）が炎症で縮んで硬くなっています">
+    <Figure
+      viewBox="0 0 560 340"
+      title="肩の関節のしくみ（関節包の下のたるみ）"
+      desc="正常な肩では関節包の下側にたるみがあり、腕を上げるときに伸びます。拘縮した肩ではこのたるみが厚く縮んでいます"
+    >
       <ArrowDefs id="fs-arrow" color={PALETTE.warn} />
-      <FigCaption x={148} y={26} size={15} color={PALETTE.inkSoft}>
+      <ArrowDefs id="fs-arrow-b" color={PALETTE.brandMid} />
+      <FigCaption x={140} y={26} size={15} color={PALETTE.inkSoft}>
         ゆとりのある肩
       </FigCaption>
-      <FigCaption x={412} y={26} size={15} color={PALETTE.warn}>
+      <FigCaption x={420} y={26} size={15} color={PALETTE.warn}>
         いまの肩
       </FigCaption>
 
-      <g transform="translate(30,48)">
+      <g transform="translate(20,44)">
         <ShoulderCapsule tight={false} />
       </g>
-      <g transform="translate(294,48)">
+      <g transform="translate(300,44)">
         <ShoulderCapsule tight={tight} />
       </g>
 
-      <text x={280} y={288} textAnchor="middle" fontSize={13} fontWeight={700} fill={PALETTE.ink}>
-        袋（関節包）が縮むと、腕が上がらなくなり、動かすと痛みます
+      <text x={280} y={326} textAnchor="middle" fontSize={12.5} fontWeight={700} fill={PALETTE.ink}>
+        腕を上げるとき、関節包の下のたるみが伸びます。ここが厚く縮むと、腕が上がらなくなります
       </text>
     </Figure>
   )
 }
 
+/**
+ * 肩関節の前後断面（冠状断）。
+ *
+ * 以前は「大きい袋」と「小さい袋」の対比で描いていたが、
+ * 凍結肩で実際に起きているのは袋全体が均一に小さくなることではなく、
+ * 関節包の下側（腋窩部）のたるみが厚くなって失われることである。
+ * 腕が上がるのはこのたるみが伸びるからで、
+ * ここを描き分けないと「なぜ上がらないのか」が伝わらない。
+ */
 function ShoulderCapsule({ tight }: { tight: boolean }) {
-  const pad = tight ? 6 : 22
   return (
     <g>
-      {/* 肩甲骨の受け皿 */}
-      <path d="M42 60 Q26 110 42 160 L58 152 Q46 110 58 68 Z" fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth={2.4} />
-      <text x={16} y={190} fontSize={11.5} fill={PALETTE.inkMute}>
+      {/* 肩甲骨の受け皿（関節窩） */}
+      <path d="M42 56 Q26 106 42 156 L58 148 Q46 106 58 64 Z" fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth={2.4} />
+      <text x={8} y={48} fontSize={11.5} fill={PALETTE.inkMute}>
         肩甲骨
       </text>
-      {/* 関節包 */}
+
+      {/* 関節包の本体（骨頭を包む部分） */}
       <path
-        d={`M52 ${68 - pad / 2} Q${120 + pad} ${40 - pad} ${150 + pad} ${110} Q${120 + pad} ${180 + pad} 52 ${152 + pad / 2} Z`}
+        d="M58 62 Q100 42 134 92 Q140 114 122 128 Q104 140 78 136 Q56 132 56 100 Z"
         fill={tight ? PALETTE.warnLight : PALETTE.brandLight}
         stroke={tight ? PALETTE.warn : PALETTE.brandMid}
-        strokeWidth={tight ? 4 : 2.4}
+        strokeWidth={tight ? 5 : 2.4}
       />
-      {/* 上腕骨頭 */}
-      <circle cx={92} cy={110} r={34} fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth={2.4} />
-      <path d="M112 132 L184 186" stroke={PALETTE.boneEdge} strokeWidth={18} strokeLinecap="round" />
-      <path d="M112 132 L184 186" stroke={PALETTE.bone} strokeWidth={12} strokeLinecap="round" />
-      <text x={158} y={214} fontSize={11.5} fill={PALETTE.inkMute}>
+
+      {/*
+        下側のたるみ（腋窩陥凹）。この図の主役。
+        ゆとりのある肩では大きく垂れ下がり、ひだが見える。
+        拘縮した肩ではほとんど失われ、壁が厚くなる。
+      */}
+      {tight ? (
+        <>
+          <path
+            d="M76 132 Q72 152 92 156 Q112 154 116 138 Q108 131 100 134 Q88 139 76 132 Z"
+            fill={PALETTE.warnLight}
+            stroke={PALETTE.warn}
+            strokeWidth={6}
+          />
+          <line x1={100} y1={206} x2={96} y2={162} stroke={PALETTE.warn} strokeWidth={2.5} markerEnd="url(#fs-arrow)" />
+          <text x={30} y={222} fontSize={11.5} fontWeight={800} fill={PALETTE.warn}>
+            下のたるみがなくなり、厚く縮んで
+          </text>
+          <text x={30} y={237} fontSize={11.5} fontWeight={800} fill={PALETTE.warn}>
+            いるため、伸びる余地がありません
+          </text>
+        </>
+      ) : (
+        <>
+          <path
+            d="M72 134 Q60 176 84 190 Q112 196 122 166 Q126 146 116 132 Q94 145 72 134 Z"
+            fill={PALETTE.brandLight}
+            stroke={PALETTE.brandMid}
+            strokeWidth={2.4}
+          />
+          {/* たるみのひだ */}
+          <path d="M78 150 Q94 160 112 151" fill="none" stroke={PALETTE.brandMid} strokeWidth={1.6} />
+          <path d="M76 164 Q92 174 116 163" fill="none" stroke={PALETTE.brandMid} strokeWidth={1.6} />
+          <line x1={100} y1={206} x2={98} y2={188} stroke={PALETTE.brandMid} strokeWidth={2.5} markerEnd="url(#fs-arrow-b)" />
+          <text x={30} y={222} fontSize={11.5} fontWeight={800} fill={PALETTE.brand}>
+            下のほうにたるみ（ゆとり）があり
+          </text>
+          <text x={30} y={237} fontSize={11.5} fontWeight={800} fill={PALETTE.brand}>
+            腕を上げるとき、ここが伸びます
+          </text>
+        </>
+      )}
+
+      {/* 上腕骨頭と腕の骨 */}
+      <circle cx={96} cy={100} r={32} fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth={2.4} />
+      <path d="M116 124 L188 178" stroke={PALETTE.boneEdge} strokeWidth={18} strokeLinecap="round" />
+      <path d="M116 124 L188 178" stroke={PALETTE.bone} strokeWidth={12} strokeLinecap="round" />
+      <text x={194} y={170} fontSize={11.5} fill={PALETTE.inkMute}>
         腕の骨
       </text>
+
       <Pill
-        x={56}
-        y={8}
-        w={132}
+        x={52}
+        y={4}
+        w={140}
         h={24}
         fill={tight ? PALETTE.warn : PALETTE.brandMid}
-        label={tight ? '袋が縮んで硬い' : '袋にゆとりがある'}
+        label={tight ? '下の袋が厚く縮む' : '下の袋にゆとりあり'}
         labelColor="#fff"
         size={12}
       />
