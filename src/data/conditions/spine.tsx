@@ -111,7 +111,7 @@ export const lumbarStenosis: ConditionDef = {
       id: 'lss-dermatome',
       group: '病気のしくみ',
       title: 'しびれる場所で、どの神経かが分かります',
-      node: () => <LegDermatomeFigure level={null} />,
+      node: () => <LegDermatomeFigure level={null} interactive />,
       points: [
         '足のどこがしびれるかで、押されている神経のおおよその場所が分かります。',
         'MRIの画像とあわせて、治療の場所を決めます。',
@@ -322,7 +322,7 @@ export const lumbarDiscHernia: ConditionDef = {
       id: 'ldh-dermatome',
       group: '病気のしくみ',
       title: 'しびれる場所で、どの神経かが分かります',
-      node: () => <LegDermatomeFigure level={null} />,
+      node: () => <LegDermatomeFigure level={null} interactive />,
       points: [
         '足のどこがしびれるか、どの動きが弱いかで、押されている神経が分かります。',
         'つま先立ちができない、かかと歩きができない、といった所見も大切な手がかりです。',
@@ -525,7 +525,7 @@ export const cervicalRadiculopathy: ConditionDef = {
       id: 'csr-dermatome',
       group: '病気のしくみ',
       title: 'しびれる場所で、どの神経かが分かります',
-      node: () => <ArmDermatomeFigure level={null} />,
+      node: () => <ArmDermatomeFigure level={null} interactive />,
       points: [
         'どの指がしびれるか、どの動きが弱いかで、押されている神経が分かります。',
         '首のレントゲン・MRIとあわせて判断します。',

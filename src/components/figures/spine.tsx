@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ArrowDefs, FigCaption, Figure, MultiText, PALETTE, Pill } from './common'
 
@@ -377,11 +378,18 @@ function DermPanel({
   shapes,
   bands,
   level,
+  onPick,
 }: {
   clipId: string
   shapes: ReactNode
   bands: DermBand[]
   level?: string | null
+  /**
+   * 図の範囲を指したときに呼ばれる。
+   * 診察室では、患者さんが「ここがしびれる」と言った場所を医師がその場で押して
+   * 色を変えられたほうが速い。フォームに戻らずに図の上で完結させるための口。
+   */
+  onPick?: (id: string) => void
 }) {
   return (
     <g>
@@ -429,6 +437,42 @@ function DermPanel({
       <g fill="none" stroke={PALETTE.line} strokeWidth={2}>
         {shapes}
       </g>
+      {/*
+        当たり判定。輪郭でクリップすると細い部分が押しにくくなるため、
+        クリップせずに帯と同じ矩形を透明で重ねる。
+        タブレットでも指で押せる大きさを確保する。
+      */}
+      {onPick &&
+        bands.map((b) => (
+          <rect
+            key={`hit${b.id}`}
+            x={b.x}
+            y={b.y}
+            width={b.w}
+            height={b.h}
+            fill="transparent"
+            style={{ cursor: 'pointer' }}
+            /* 患者さんの前で黒い枠が出ないよう、キーボード操作のときだけ枠を出す */
+            className="outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2f7fb0]"
+            role="button"
+            tabIndex={0}
+            aria-label={`${b.id} の範囲`}
+            aria-pressed={level === b.id}
+            onClick={(e) => {
+              // 説明モードは画面の右側タップでスライドが進む。
+              // 図を指したときにスライドまで送らないよう、ここで止める。
+              e.stopPropagation()
+              onPick(b.id)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                onPick(b.id)
+              }
+            }}
+          />
+        ))}
     </g>
   )
 }
@@ -487,6 +531,33 @@ function DermLegendRow({
   )
 }
 
+
+/**
+ * 「図を指すと色が変わる」ための状態。
+ *
+ * 診察室では、患者さんが自分の体を指して「ここ」と言う。
+ * そのときフォームに戻って選び直すより、図をそのまま押せたほうが速い。
+ * 入力から渡された level を初期値にし、押した内容が優先される。
+ * 同じ場所をもう一度押すと選択が外れる。
+ */
+function usePickedLevel<T extends string>(level: T | null | undefined) {
+  const [picked, setPicked] = useState<T | null>(null)
+  useEffect(() => {
+    setPicked(null)
+  }, [level])
+  const pick = (id: string) => setPicked((prev) => (prev === id ? null : (id as T)))
+  return { shown: (picked ?? level ?? null) as T | null, pick, picked }
+}
+
+/** 図の下に出す操作の案内（印刷には出さない） */
+function PickHint({ x, y, active }: { x: number; y: number; active: boolean }) {
+  return (
+    <text x={x} y={y} textAnchor="middle" fontSize={10.5} fontWeight={700} fill={PALETTE.brandMid} className="print:hidden">
+      {active ? '図を押すと選び直せます（もう一度押すと解除）' : '患者さんが指した場所を、図の上で押してください'}
+    </text>
+  )
+}
+
 const DERM_NOTE = '※ 皮膚分節（しびれる範囲）の分布には個人差があります'
 
 /**
@@ -499,10 +570,15 @@ export function LegDermatomeFigure({
   level,
   /** スライドでは見出しが重複するため、既定では図の中に見出しを出さない */
   showTitle = false,
+  /** 図を押して神経根を選べるようにする（診察室での指し示し用） */
+  interactive = false,
 }: {
   level?: 'L4' | 'L5' | 'S1' | null
   showTitle?: boolean
+  interactive?: boolean
 }) {
+  const { shown, pick, picked } = usePickedLevel<'L4' | 'L5' | 'S1'>(level)
+  const onPick = interactive ? pick : undefined
   /** 脚の輪郭（腰から足先まで。ひざ・ふくらはぎ・足首のくびれをつける） */
   const leg = (cx: number) => (
     <path
@@ -571,7 +647,8 @@ export function LegDermatomeFigure({
       <DermPanel
         clipId="derm-leg-front"
         shapes={leg(FRONT)}
-        level={level}
+        level={shown}
+        onPick={onPick}
         bands={[
           { id: 'L4', x: FRONT - 32, w: 32, y: 150, h: 186 },
           { id: 'L5', x: FRONT, w: 32, y: 150, h: 186 },
@@ -592,7 +669,8 @@ export function LegDermatomeFigure({
       <DermPanel
         clipId="derm-leg-back"
         shapes={leg(BACK)}
-        level={level}
+        level={shown}
+        onPick={onPick}
         bands={[{ id: 'S1', x: BACK - 32, w: 64, y: 172, h: 164 }]}
       />
       <line x1={BACK - 22} y1={168} x2={BACK + 22} y2={168} stroke={PALETTE.inkMute} strokeWidth={1.2} strokeDasharray="4 3" />
@@ -610,7 +688,8 @@ export function LegDermatomeFigure({
       <DermPanel
         clipId="derm-foot-dorsum"
         shapes={foot(DORSUM)}
-        level={level}
+        level={shown}
+        onPick={onPick}
         bands={[
           { id: 'L4', x: DORSUM - 30, w: 12, y: 96, h: 144 },
           { id: 'L5', x: DORSUM - 18, w: 28, y: 96, h: 144 },
@@ -634,7 +713,8 @@ export function LegDermatomeFigure({
       <DermPanel
         clipId="derm-foot-sole"
         shapes={foot(SOLE)}
-        level={level}
+        level={shown}
+        onPick={onPick}
         bands={[
           { id: 'L5', x: SOLE - 30, w: 24, y: 96, h: 144 },
           { id: 'S1', x: SOLE - 6, w: 40, y: 96, h: 144 },
@@ -655,10 +735,11 @@ export function LegDermatomeFigure({
           { id: 'S1', area: 'ふくらはぎ 〜 足の裏・外側・小指' },
         ] as const
       ).map((r, i) => (
-        <DermLegendRow key={r.id} x={300} y={286 + i * 24} id={r.id} text={r.area} on={level === r.id} />
+        <DermLegendRow key={r.id} x={300} y={286 + i * 24} id={r.id} text={r.area} on={shown === r.id} />
       ))}
 
-      <text x={280} y={376} textAnchor="middle" fontSize={11} fill={PALETTE.inkMute}>
+      {interactive && <PickHint x={280} y={362} active={picked !== null} />}
+      <text x={280} y={378} textAnchor="middle" fontSize={11} fill={PALETTE.inkMute}>
         {DERM_NOTE}
       </text>
     </Figure>
@@ -677,10 +758,15 @@ export function ArmDermatomeFigure({
   level,
   /** スライドでは見出しが重複するため、既定では図の中に見出しを出さない */
   showTitle = false,
+  /** 図を押して神経根を選べるようにする（診察室での指し示し用） */
+  interactive = false,
 }: {
   level?: 'C5' | 'C6' | 'C7' | 'C8' | null
   showTitle?: boolean
+  interactive?: boolean
 }) {
+  const { shown, pick, picked } = usePickedLevel<'C5' | 'C6' | 'C7' | 'C8'>(level)
+  const onPick = interactive ? pick : undefined
   /** 腕の輪郭（肩から手首まで垂らした形。ひじと手首をくびれさせる） */
   const arm = (cx: number) => (
     <path
@@ -770,7 +856,8 @@ export function ArmDermatomeFigure({
       <DermPanel
         clipId="derm-arm-front"
         shapes={arm(ARM_F)}
-        level={level}
+        level={shown}
+        onPick={onPick}
         bands={[
           { id: 'C5', x: ARM_F - 28, w: 56, y: 64, h: 74 },
           { id: 'C6', x: ARM_F - 22, w: 22, y: 150, h: 100 },
@@ -792,7 +879,8 @@ export function ArmDermatomeFigure({
       <DermPanel
         clipId="derm-arm-back"
         shapes={arm(ARM_B)}
-        level={level}
+        level={shown}
+        onPick={onPick}
         bands={[{ id: 'C7', x: ARM_B - 14, w: 28, y: 96, h: 154 }]}
       />
       <line x1={ARM_B - 17} y1={147} x2={ARM_B + 17} y2={147} stroke={PALETTE.inkMute} strokeWidth={1.2} strokeDasharray="4 3" />
@@ -810,7 +898,8 @@ export function ArmDermatomeFigure({
       <DermPanel
         clipId="derm-palm"
         shapes={palm.shapes}
-        level={level}
+        level={shown}
+        onPick={onPick}
         bands={[palm.band('C6', -48, -14), palm.band('C7', -14, 1), palm.band('C8', 1, 33)]}
       />
       <SideMark x={palm.X(-36)} y={262}>
@@ -823,7 +912,8 @@ export function ArmDermatomeFigure({
       <DermPanel
         clipId="derm-dorsum"
         shapes={dors.shapes}
-        level={level}
+        level={shown}
+        onPick={onPick}
         bands={[dors.band('C6', -48, -14), dors.band('C7', -14, 1), dors.band('C8', 1, 33)]}
       />
       <SideMark x={dors.X(-36)} y={262}>
@@ -843,7 +933,7 @@ export function ArmDermatomeFigure({
         ] as const
       ).map((r, i) => {
         const y = 276 + i * 28
-        const on = level === r.id
+        const on = shown === r.id
         return (
           <g key={r.id}>
             <rect
@@ -869,6 +959,7 @@ export function ArmDermatomeFigure({
         )
       })}
 
+      {interactive && <PickHint x={280} y={264} active={picked !== null} />}
       <text x={280} y={394} textAnchor="middle" fontSize={11} fill={PALETTE.inkMute}>
         {DERM_NOTE}
       </text>
