@@ -324,6 +324,21 @@ export type BodySpot =
   | 'thighBackL' | 'thighBackR'
   | 'shinL' | 'shinR'
 
+/** 読み上げ・操作・カルテ記載に使う部位名 */
+export const BODY_SPOT_LABEL: Record<BodySpot, string> = {
+  neck: '首',
+  shoulderR: '右肩', shoulderL: '左肩',
+  lowBack: '腰',
+  elbowR: '右ひじ', elbowL: '左ひじ',
+  handR: '右手', handL: '左手',
+  hipR: '右股関節', hipL: '左股関節',
+  thighBackR: '右ももの裏', thighBackL: '左ももの裏',
+  kneeR: '右ひざ', kneeL: '左ひざ',
+  shinR: '右すね', shinL: '左すね',
+  ankleR: '右足首', ankleL: '左足首',
+  heelR: '右かかと', heelL: '左かかと',
+}
+
 const SPOT_POS: Record<BodySpot, [number, number]> = {
   neck: [100, 52],
   shoulderR: [72, 76],
@@ -347,7 +362,20 @@ const SPOT_POS: Record<BodySpot, [number, number]> = {
   heelL: [114, 352],
 }
 
-export function BodyMapFigure({ spots, caption }: { spots: BodySpot[]; caption?: string }) {
+export function BodyMapFigure({
+  spots,
+  caption,
+  /**
+   * 印を押したときに呼ばれる。
+   * 患者さんが「ここも痛い」と指した場所を、その場で足せるようにする。
+   * 渡さなければ従来どおり表示専用。
+   */
+  onToggle,
+}: {
+  spots: BodySpot[]
+  caption?: string
+  onToggle?: (spot: BodySpot) => void
+}) {
   return (
     <Figure viewBox="0 0 200 400" title="痛みのある場所" desc={caption ?? '体の図に痛む場所を示しています'} maxWidth={200}>
       {/* シルエット */}
@@ -371,9 +399,64 @@ export function BodyMapFigure({ spots, caption }: { spots: BodySpot[]; caption?:
           </g>
         )
       })}
+
+      {/*
+        押せる位置。押せるようにしたときだけ、選ばれていない場所にも薄い点を出す。
+        点がないと医師がどこを狙えばよいか分からないため。
+        患者さんに見せるだけの図（onToggle なし）では出さないので、見た目は従来のまま。
+        足首とかかとは12しか離れておらず、当たり判定は多少重なる。
+        あとに描いたものが上に来るので、SPOT_POS の並び順で優先が決まる。
+      */}
+      {onToggle &&
+        (Object.keys(SPOT_POS) as BodySpot[]).map((s) => {
+          const [x, y] = SPOT_POS[s]
+          const on = spots.includes(s)
+          return (
+            <g key={`hit-${s}`}>
+              {!on && <circle cx={x} cy={y} r={3} fill={PALETTE.line} opacity={0.5} />}
+              <circle
+                cx={x}
+                cy={y}
+                r={10}
+                fill="transparent"
+                style={{ cursor: 'pointer' }}
+                className="outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2f7fb0]"
+                role="button"
+                tabIndex={0}
+                aria-label={`${BODY_SPOT_LABEL[s]}${on ? '（痛みあり）' : ''}`}
+                aria-pressed={on}
+                onClick={(e) => {
+                  // 説明モードは画面の右側タップでスライドが進むため、ここで止める
+                  e.stopPropagation()
+                  onToggle(s)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onToggle(s)
+                  }
+                }}
+              />
+            </g>
+          )
+        })}
       {caption && (
-        <text x={100} y={392} textAnchor="middle" fontSize={12} fontWeight={700} fill={PALETTE.inkSoft}>
+        <text x={100} y={380} textAnchor="middle" fontSize={12} fontWeight={700} fill={PALETTE.inkSoft}>
           {caption}
+        </text>
+      )}
+      {onToggle && (
+        <text
+          x={100}
+          y={396}
+          textAnchor="middle"
+          fontSize={10}
+          fontWeight={700}
+          fill={PALETTE.brandMid}
+          className="print:hidden"
+        >
+          押して増やせます
         </text>
       )}
     </Figure>

@@ -8,6 +8,7 @@ import { assessOsteoporosis, fmtT } from './osteoporosis'
 import { assessRa, ACTIVITY_LABEL } from './ra'
 import { assessLocomo, calcBmi, KL_GRADE_LABEL } from './locomo'
 import { getCondition } from '@/data/conditions'
+import { BODY_SPOT_LABEL } from '@/components/figures/generic'
 import { assessCondition, labelsOf, sideLabel } from './condition'
 
 /**
@@ -237,6 +238,12 @@ export function buildKarte(session: Session): KarteOutput {
         lines.push(`【レッドフラッグ】${a.redFlags.join('、')}`)
         lines.push('　→ 画像評価・専門医への紹介を検討')
         soapA.push(`レッドフラッグあり：${a.redFlags.join('、')}`)
+      }
+      // 説明中に図を押して足した痛みの場所は、記録に残さないと意味がない
+      if (c.painSpots !== null && c.painSpots.length > 0) {
+        const names = c.painSpots.map((s) => BODY_SPOT_LABEL[s as keyof typeof BODY_SPOT_LABEL] ?? s)
+        lines.push(`疼痛部位（図で確認）：${names.join('、')}`)
+        soapO.push(`疼痛部位 ${names.join('・')}`)
       }
       const prior = labelsOf(c.priorTreatments, def.priorTreatmentOptions)
       if (prior.length > 0) lines.push(`これまでの治療：${prior.join('、')}`)

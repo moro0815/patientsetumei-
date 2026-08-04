@@ -3,7 +3,8 @@ import { getExercise } from '@/data/exercises'
 import { getDrug } from '@/data/drugs'
 import { assessCondition, currentPhaseIndex, labelsOf, sideLabel } from '@/logic/condition'
 import { ExerciseFigure } from '@/components/figures/exercise'
-import { BodyMapFigure, PainScaleFigure, RecoveryTimelineFigure, TreatmentLadderFigure, type BodySpot } from '@/components/figures/generic'
+import { PainScaleFigure, RecoveryTimelineFigure, TreatmentLadderFigure, type BodySpot } from '@/components/figures/generic'
+import { BodyMapConnected } from '@/components/figures/connected'
 import type { ConditionKey, Session } from '@/types'
 import type { Slide, SlideBuilder } from './types'
 
@@ -53,7 +54,8 @@ export const buildConditionSlides: SlideBuilder = (session) => {
       group: '現状',
       title: `${sideLabel(c.side)}${def.label}`,
       lead: def.oneLiner,
-      figure: <BodyMapFigure spots={spots} caption="いま痛みが出ている場所" />,
+      // 図から直接入力できるようにする（患者さんが指した場所を押して足せる）
+      figure: <BodyMapConnected defaults={spots} caption="いま痛みが出ている場所" />,
       points: [
         ...(selectedSymptoms.length > 0
           ? [`今日うかがった症状：${selectedSymptoms.slice(0, 4).join('、')}`]

@@ -128,6 +128,7 @@ export function emptyConditionInput(): ConditionInput {
     stage: null,
     metrics: {},
     priorTreatments: [],
+    painSpots: null,
     note: '',
   }
 }

@@ -3,11 +3,11 @@ import {
   JointDestructionFigure,
   MtxCalendarFigure,
   RaAlgorithmFigure,
-  RaJointMapFigure,
   SynoviumFigure,
   T2TFigure,
   WindowOfOpportunityFigure,
 } from '@/components/figures/joint'
+import { RaJointMapConnected } from '@/components/figures/connected'
 import { CostFigure } from '@/components/figures/lifestyle'
 import { ExerciseFigure } from '@/components/figures/exercise'
 import { ACTIVITY_PLAIN, assessRa } from '@/logic/ra'
@@ -58,14 +58,17 @@ export const buildRaSlides: SlideBuilder = (session) => {
       id: 'ra-joints',
       group: '現状',
       title: '炎症が起きている関節',
-      figure: <RaJointMapFigure regions={r.affectedRegions} />,
-      when: (s) => s.ra.affectedRegions.length > 0,
+      // 図から直接入力できるようにする（診察中に関節を確認しながら押す）
+      figure: <RaJointMapConnected />,
       points: [
         'リウマチは、手足の小さな関節から、左右対称に始まることが多い病気です。',
         '朝、手がこわばって握りにくい（30分以上続く）のが典型的なサインです。',
         '腫れている関節の数が減っていくことが、治療がうまくいっているしるしです。',
       ],
-      talk: ['図を見せながら、実際に腫れている関節を触って確認すると納得が得られます。'],
+      talk: [
+        '図を見せながら、実際に腫れている関節を触って確認すると納得が得られます。',
+        '図の関節を押すと、その場で記録できます（入力画面に戻る必要はありません）。カルテ文にも反映されます。',
+      ],
       cite: ['ra-gl-2024'],
     },
 

@@ -183,3 +183,23 @@ describe('カルテ記載文の生成（関節リウマチ・膝OA）', () => {
     expect(k.text).toContain('ロコモ度2')
   })
 })
+
+describe('図から入力した痛みの場所', () => {
+  it('図で確認した部位がカルテ文に載る', () => {
+    const s = createSession('lumbarDiscHernia')
+    s.condition = { ...s.condition, side: 'right', painSpots: ['lowBack', 'thighBackR', 'shinR'] }
+    const t = buildKarte(s).text
+    expect(t).toContain('疼痛部位（図で確認）：腰、右ももの裏、右すね')
+  })
+
+  it('未編集（null）なら載らない', () => {
+    const s = createSession('lumbarDiscHernia')
+    expect(buildKarte(s).text).not.toContain('疼痛部位（図で確認）')
+  })
+
+  it('すべて外した（空配列）ときも載らない', () => {
+    const s = createSession('lumbarDiscHernia')
+    s.condition = { ...s.condition, painSpots: [] }
+    expect(buildKarte(s).text).not.toContain('疼痛部位（図で確認）')
+  })
+})

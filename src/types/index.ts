@@ -373,6 +373,14 @@ export interface ConditionInput {
   metrics: Record<string, number | null>
   /** これまでに受けた治療（疾患モデルの priorTreatmentOptions のID） */
   priorTreatments: string[]
+  /**
+   * 痛みのある場所（体の地図の印）。
+   *
+   * null は「まだ触っていない」状態で、疾患ごとの既定の場所を表示する。
+   * 医師が図を押した時点で明示的な集合になり、以後は既定に戻らない。
+   * 空配列（すべて外した状態）と未編集を区別するために null を使う。
+   */
+  painSpots: string[] | null
   /** 医師のメモ（カルテ記載に載せる） */
   note: string
 }

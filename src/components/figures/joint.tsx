@@ -203,16 +203,29 @@ const REGION_POS: Record<RaJointRegion, { x: number; y: number; r: number; label
   mtpL: { x: 184, y: 398, r: 10, label: '左MTP' },
 }
 
-export function RaJointMapFigure({ regions }: { regions: RaJointRegion[] }) {
+export function RaJointMapFigure({
+  regions,
+  /**
+   * 関節を押したときに呼ばれる。
+   *
+   * 診察では患者さんの手を取りながら「ここ」「ここも」と確認していく。
+   * その場で図を押して記録できれば、入力画面に戻る手間がなくなる。
+   * 渡さなければ従来どおり表示専用。
+   */
+  onToggle,
+}: {
+  regions: RaJointRegion[]
+  onToggle?: (region: RaJointRegion) => void
+}) {
   const set = new Set(regions)
   return (
     <Figure
-      viewBox="0 0 300 430"
+      viewBox="0 0 300 450"
       title="炎症のある関節の分布"
       desc="リウマチは左右対称に、手足の小さな関節から始まりやすい。"
       maxWidth={330}
     >
-      <rect x="0" y="0" width="300" height="430" fill={PALETTE.paper} />
+      <rect x="0" y="0" width="300" height="450" fill={PALETTE.paper} />
 
       {/* 人体シルエット */}
       <g fill="#e4e7eb" stroke={PALETTE.line} strokeWidth="1.5">
@@ -233,16 +246,47 @@ export function RaJointMapFigure({ regions }: { regions: RaJointRegion[] }) {
         const p = REGION_POS[k]
         const on = set.has(k)
         return (
-          <circle
-            key={k}
-            cx={p.x}
-            cy={p.y}
-            r={p.r}
-            fill={on ? PALETTE.inflame : PALETTE.paper}
-            fillOpacity={on ? 0.85 : 0.9}
-            stroke={on ? PALETTE.inflame : PALETTE.line}
-            strokeWidth={on ? 3 : 1.5}
-          />
+          <g key={k}>
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={p.r}
+              fill={on ? PALETTE.inflame : PALETTE.paper}
+              fillOpacity={on ? 0.85 : 0.9}
+              stroke={on ? PALETTE.inflame : PALETTE.line}
+              strokeWidth={on ? 3 : 1.5}
+            />
+            {onToggle && (
+              /*
+                当たり判定。小関節（PIP・MTP）は半径9〜10しかなく指では押しにくいので、
+                見た目より大きい透明の円を重ねる。
+              */
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={Math.max(p.r + 6, 15)}
+                fill="transparent"
+                style={{ cursor: 'pointer' }}
+                className="outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2f7fb0]"
+                role="button"
+                tabIndex={0}
+                aria-label={`${p.label}${on ? '（炎症あり）' : ''}`}
+                aria-pressed={on}
+                onClick={(e) => {
+                  // 説明モードは画面の右側タップでスライドが進むため、ここで止める
+                  e.stopPropagation()
+                  onToggle(k)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onToggle(k)
+                  }
+                }}
+              />
+            )}
+          </g>
         )
       })}
 
@@ -252,9 +296,22 @@ export function RaJointMapFigure({ regions }: { regions: RaJointRegion[] }) {
         <circle cx="18" cy="40" r="7" fill={PALETTE.paper} stroke={PALETTE.line} strokeWidth="1.5" />
         <text x="30" y="44">問題なし</text>
       </g>
-      <text x="150" y="424" textAnchor="middle" fontSize="12" fill={PALETTE.inkSoft}>
+      <text x="150" y="426" textAnchor="middle" fontSize="12" fill={PALETTE.inkSoft}>
         手足の小さな関節・左右対称がリウマチの特徴です
       </text>
+      {onToggle && (
+        <text
+          x="150"
+          y="443"
+          textAnchor="middle"
+          fontSize="11"
+          fontWeight={700}
+          fill={PALETTE.brandMid}
+          className="print:hidden"
+        >
+          関節を押すと、炎症あり／なしを切り替えられます
+        </text>
+      )}
     </Figure>
   )
 }
