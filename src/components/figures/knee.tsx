@@ -7,51 +7,143 @@ import type { LocomoStage, StandUpResult } from '@/types'
 
 // ---------------------------------------------------------------- 膝の軟骨のすり減り
 
-export function KneeOaFigure({ klGrade, varus }: { klGrade?: number | null; varus?: boolean }) {
-  const g = klGrade ?? 0
-  const gap = [16, 13, 9, 5, 1.5][Math.min(4, Math.max(0, g))]
-  const osteophyte = g >= 1
-  const sclerosis = g >= 2
+/*
+  膝の骨の形は、以前は角丸長方形の模式でした。
+  レントゲンをトレースするまでの中間として、大腿骨遠位を「2つの円の合併」で描き、
+  丸い顆と浅い顆間切痕が確実に出るようにしています（手描きベジエだと形が崩れるため）。
+  円弧（A コマンド）で顆をつくるので、太ももの骨らしい広がりと切痕が保証されます。
+*/
 
-  const knee = (x: number, cartilageGap: number, showOsteophyte: boolean, showSclerosis: boolean, tilt: number) => (
-    <g transform={`translate(${x},60)`}>
-      {/* 大腿骨 */}
-      <path
-        d="M 34 0 L 34 66 q -34 4 -34 30 q 0 26 34 30 q 34 -4 34 -30 q 0 -26 -34 -30 Z"
-        fill={PALETTE.bone}
-        stroke={PALETTE.boneEdge}
-        strokeWidth="2.5"
-        transform="translate(26,0)"
-      />
-      {/* 脛骨 */}
-      <path
-        d={`M 26 ${126 + cartilageGap + 24} L 26 210 L 94 210 L 94 ${126 + cartilageGap + 24} q -34 -8 -68 0 Z`}
-        fill={PALETTE.bone}
-        stroke={PALETTE.boneEdge}
-        strokeWidth="2.5"
-        transform={`rotate(${tilt} 60 ${126 + cartilageGap})`}
-      />
-      {/* 軟骨 */}
-      <path
-        d={`M 28 ${126} q 32 -8 64 0 l 0 ${cartilageGap} q -32 -8 -64 0 Z`}
-        fill={cartilageGap > 8 ? '#bcdcec' : '#dbe3e8'}
-        stroke={cartilageGap > 8 ? PALETTE.brandMid : PALETTE.warn}
-        strokeWidth="2"
-      />
-      {/* 骨棘 */}
-      {showOsteophyte && (
-        <g fill={PALETTE.boneDark} stroke={PALETTE.boneEdge} strokeWidth="1.5">
-          <path d={`M 26 ${124} l -12 -3 l 12 8 Z`} />
-          <path d={`M 94 ${124} l 12 -3 l -12 8 Z`} />
-          <path d={`M 26 ${132 + cartilageGap} l -13 5 l 13 -11 Z`} />
-        </g>
-      )}
-      {/* 骨硬化像 */}
-      {showSclerosis && (
-        <rect x="30" y={126 + cartilageGap} width="60" height="7" fill={PALETTE.boneEdge} opacity="0.75" />
-      )}
-    </g>
+/** 大腿骨遠位（正面）：中心(±D,0) 半径RC の2円の合併で顆をつくる */
+const FEMUR_D = 27
+const FEMUR_RC = 35
+/** 円の下側交点＝顆間切痕の底 */
+const FEMUR_NOTCH_Y = Math.round(Math.sqrt(FEMUR_RC * FEMUR_RC - FEMUR_D * FEMUR_D) * 10) / 10
+const FEMUR_CONDYLE_BOTTOM = FEMUR_RC // 顆の最下点（局所 y）
+
+function femurPath(): string {
+  const d = FEMUR_D
+  const Rc = FEMUR_RC
+  const shaftHalf = 22
+  const shaftTop = -64
+  const iy = FEMUR_NOTCH_Y
+  const Lx = -d - Rc
+  const Rx = d + Rc
+  return (
+    `M ${-shaftHalf} ${shaftTop}` +
+    ` C ${-shaftHalf - 4} ${shaftTop + 40} ${-shaftHalf - 14} -50 ${Lx + 4} -14` +
+    ` C ${Lx} -6 ${Lx} 0 ${Lx} 2` +
+    ` A ${Rc} ${Rc} 0 0 0 0 ${iy}` +
+    ` A ${Rc} ${Rc} 0 0 0 ${Rx} 2` +
+    ` C ${Rx} 0 ${Rx} -6 ${Rx - 4} -14` +
+    ` C ${shaftHalf + 14} -50 ${shaftHalf + 4} ${shaftTop + 40} ${shaftHalf} ${shaftTop} Z`
   )
+}
+/** 顆の丸みに沿う陰影 */
+function femurDetailPath(): string {
+  const d = FEMUR_D
+  const Rc = FEMUR_RC
+  const iy = FEMUR_NOTCH_Y
+  return (
+    `M ${-d - Rc + 8} -6 A ${Rc - 7} ${Rc - 7} 0 0 0 -3 ${iy - 5}` +
+    ` M ${d + Rc - 8} -6 A ${Rc - 7} ${Rc - 7} 0 0 1 3 ${iy - 5}`
+  )
+}
+/** 脛骨近位（正面）：平らな関節面＋中央の顆間隆起、シャフトへ絞る */
+function tibiaPath(): string {
+  const half = 52
+  const sh = 24
+  const bottom = 96
+  return (
+    `M ${-half} 6 Q ${-half} 0 ${-half + 9} 0 L -13 0` +
+    ` L -7 -7 L -2 0 L 2 0 L 7 -7 L 13 0` +
+    ` L ${half - 9} 0 Q ${half} 0 ${half} 6` +
+    ` C ${half - 3} 44 ${sh + 7} 74 ${sh} ${bottom}` +
+    ` L ${-sh} ${bottom}` +
+    ` C ${-sh - 7} 74 ${-half + 3} 44 ${-half} 6 Z`
+  )
+}
+
+export function KneeOaFigure({
+  klGrade,
+  varus,
+  /** すり減っている側。既定は内側（日本人のOAは内側型が大多数） */
+  compartment = 'medial',
+}: {
+  klGrade?: number | null
+  varus?: boolean
+  compartment?: 'medial' | 'lateral'
+}) {
+  const g = klGrade ?? 0
+  const gap = [16, 14, 10, 6, 3][Math.min(4, Math.max(0, g))]
+  const osteophyte = g >= 1
+  const tilt = varus ? (compartment === 'lateral' ? -1 : 1) * Math.min(4, g) : 0
+
+  const femurCy = 132
+  const condyleBottom = femurCy + FEMUR_CONDYLE_BOTTOM
+
+  /**
+   * 1つの膝を描く。worn を渡すとその区画の軟骨を薄く・オレンジにする。
+   * 健康な膝は worn=null。
+   */
+  const knee = (x: number, cartilageGap: number, worn: 'medial' | 'lateral' | null, showOsteophyte: boolean) => {
+    const plateau = condyleBottom + cartilageGap
+    const pad = (side: 'medial' | 'lateral', x0: number, x1: number) => {
+      const isWorn = worn === side
+      const h = isWorn ? Math.max(2.5, cartilageGap * 0.4) : cartilageGap - 1
+      const yTop = plateau - h - 0.5
+      return (
+        <rect
+          x={x0}
+          y={yTop}
+          width={x1 - x0}
+          height={h}
+          rx={3}
+          fill={isWorn ? PALETTE.warnLight : '#bcdcec'}
+          stroke={isWorn ? PALETTE.warn : PALETTE.brandMid}
+          strokeWidth={isWorn ? 2.5 : 2}
+        />
+      )
+    }
+    return (
+      <g transform={`translate(${x},0)`}>
+        <g transform={`translate(0,${femurCy})`}>
+          <path d={femurPath()} fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth="3" strokeLinejoin="round" />
+          <path d={femurDetailPath()} fill="none" stroke={PALETTE.boneEdge} strokeWidth="1.5" opacity="0.6" />
+        </g>
+        <g transform={`translate(0,${plateau}) rotate(${tilt})`}>
+          <path d={tibiaPath()} fill={PALETTE.bone} stroke={PALETTE.boneEdge} strokeWidth="3" strokeLinejoin="round" />
+          {showOsteophyte && (
+            <g fill={PALETTE.boneDark} stroke={PALETTE.boneEdge} strokeWidth="1.2">
+              <path d="M -52 3 l -9 -3 l 9 7 Z" />
+              <path d="M 52 3 l 9 -3 l -9 7 Z" />
+            </g>
+          )}
+        </g>
+        {pad('medial', -50, -6)}
+        {pad('lateral', 6, 50)}
+        <text
+          x={-58}
+          y={plateau - cartilageGap / 2 + 3}
+          textAnchor="end"
+          fontSize="11"
+          fontWeight="700"
+          fill={worn === 'medial' ? PALETTE.warn : PALETTE.inkMute}
+        >
+          内側
+        </text>
+        <text
+          x={58}
+          y={plateau - cartilageGap / 2 + 3}
+          fontSize="11"
+          fontWeight="700"
+          fill={worn === 'lateral' ? PALETTE.warn : PALETTE.inkMute}
+        >
+          外側
+        </text>
+      </g>
+    )
+  }
 
   return (
     <Figure
@@ -66,10 +158,10 @@ export function KneeOaFigure({ klGrade, varus }: { klGrade?: number | null; varu
 
       <g>
         <rect x="40" y="44" width="230" height="252" rx="14" fill={PALETTE.bg} stroke={PALETTE.line} strokeWidth="2" />
-        <FigCaption x={155} y={66} size={15} color={PALETTE.good}>
+        <FigCaption x={155} y={60} size={15} color={PALETTE.good}>
           健康な膝
         </FigCaption>
-        {knee(94, 16, false, false, 0)}
+        {knee(155, 16, null, false)}
         <text x={155} y={288} textAnchor="middle" fontSize="12.5" fill={PALETTE.inkSoft}>
           軟骨が厚く、すき間が広い
         </text>
@@ -77,17 +169,17 @@ export function KneeOaFigure({ klGrade, varus }: { klGrade?: number | null; varu
 
       <g>
         <rect x="350" y="44" width="230" height="252" rx="14" fill={PALETTE.warnLight} stroke={PALETTE.warn} strokeWidth="2.5" />
-        <FigCaption x={465} y={66} size={15} color={PALETTE.warn}>
+        <FigCaption x={465} y={60} size={15} color={PALETTE.warn}>
           {klGrade != null ? `あなたの膝（グレード${klGrade}）` : '変形性膝関節症の膝'}
         </FigCaption>
-        {knee(404, gap, osteophyte, sclerosis, varus ? 4 : 0)}
+        {knee(465, gap, compartment, osteophyte)}
         <text x={465} y={288} textAnchor="middle" fontSize="12.5" fill={PALETTE.warn} fontWeight="700">
-          軟骨がうすくなり、骨のとげができる
+          {compartment === 'lateral' ? '外側' : '内側'}の軟骨がうすくなり、骨のとげができる
         </text>
       </g>
 
       <ArrowDefs id="arrKnee" color={PALETTE.inkMute} />
-      <line x1="280" y1="170" x2="340" y2="170" stroke={PALETTE.inkMute} strokeWidth="4" markerEnd="url(#arrKnee)" />
+      <line x1="288" y1="170" x2="332" y2="170" stroke={PALETTE.inkMute} strokeWidth="4" markerEnd="url(#arrKnee)" />
 
       <text x={310} y={322} textAnchor="middle" fontSize="13.5" fill={PALETTE.ink} fontWeight="700">
         軟骨は元に戻りませんが、まわりの筋肉を鍛えると痛みは軽くなります

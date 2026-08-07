@@ -611,7 +611,7 @@ function KneeMechanismSheets({ session }: { session: Session }) {
     <>
       <Sheet title="変形性膝関節症とは、どんな病気でしょうか" page="病気のしくみ ①">
         <PFig w={160} className="mb-2">
-          <KneeOaFigure klGrade={session.knee.klGrade} varus={session.knee.alignment === 'varus'} />
+          <KneeOaFigure klGrade={session.knee.klGrade} varus={session.knee.alignment === 'varus'} compartment={session.knee.alignment === 'valgus' ? 'lateral' : 'medial'} />
         </PFig>
         <Box title="■ 膝のクッション（軟骨）がすり減る病気です" className="mb-3">
           <ul className="space-y-1">

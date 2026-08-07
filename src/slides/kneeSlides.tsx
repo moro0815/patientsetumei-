@@ -33,7 +33,7 @@ export const buildKneeSlides: SlideBuilder = (session) => {
       id: 'knee-status',
       group: '現状',
       title: summary.headline,
-      figure: <KneeOaFigure klGrade={k.klGrade} varus={k.alignment === 'varus'} />,
+      figure: <KneeOaFigure klGrade={k.klGrade} varus={k.alignment === 'varus'} compartment={k.alignment === 'valgus' ? 'lateral' : 'medial'} />,
       points: [
         ...summary.body,
         '膝の骨と骨の間には「軟骨」というクッションがあります。これがすり減ると、骨に直接力がかかって痛みが出ます。',
